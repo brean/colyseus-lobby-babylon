@@ -1,0 +1,26 @@
+language: node_js
+
+node_js:
+  - '13'
+
+dist: trusty
+
+cache:
+  directories:
+    - node_module
+
+notifications:
+  email:
+    on_failure: change
+
+install:
+  - cd client && npm install
+  - cd client && npm install --save-dev
+  - cd server && npm install
+  - cd server && npm install --save-dev
+
+script:
+  - cd client && npm run docs
+  - cd client && npm run eslint
+  - cd client && npm run test -- --coverage --watchAll=false
+  - cat ./client/coverage/lcov.info | ./client/node_modules/.bin/coveralls --verbose

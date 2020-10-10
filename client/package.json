@@ -1,0 +1,78 @@
+{
+  "name": "my-app",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@rmwc/button": "^6.1.4",
+    "@rmwc/card": "^6.1.4",
+    "@rmwc/chip": "^6.1.4",
+    "@rmwc/data-table": "^6.1.4",
+    "@rmwc/dialog": "^6.1.4",
+    "@rmwc/grid": "^6.1.4",
+    "@rmwc/icon": "^6.1.4",
+    "@rmwc/select": "^6.1.4",
+    "@rmwc/textfield": "^6.1.4",
+    "@rmwc/top-app-bar": "^6.1.4",
+    "@rmwc/typography": "^6.1.4",
+    "@testing-library/jest-dom": "^4.2.4",
+    "@testing-library/react": "^9.4.0",
+    "@testing-library/user-event": "^7.2.1",
+    "@types/cors": "^2.8.7",
+    "@types/express": "^4.17.8",
+    "@types/history": "^4.7.8",
+    "@types/jest": "^24.9.1",
+    "@types/node": "^12.12.62",
+    "@types/react": "^16.9.49",
+    "@types/react-color": "^3.0.4",
+    "@types/react-dom": "^16.9.5",
+    "@types/react-router-dom": "^5.1.5",
+    "colyseus.js": "^0.13.2",
+    "express": "^4.17.1",
+    "history": "^4.10.1",
+    "nodemon": "^2.0.4",
+    "react": "^16.12.0",
+    "react-color": "^2.18.1",
+    "react-dom": "^16.12.0",
+    "react-router-dom": "^5.2.0",
+    "react-scripts": "^3.4.3",
+    "ts-node": "^8.10.2",
+    "typescript": "^3.9.7"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject",
+    "eslint": "eslint src/ --ext .js,.jsx,.ts,.tsx",
+    "docs": "typedoc --out docs/ src/"
+  },
+  "eslintConfig": {
+    "extends": "react-app"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^2.19.0",
+    "@typescript-eslint/parser": "^2.19.0",
+    "coveralls": "^3.1.0",
+    "eslint": "^6.8.0",
+    "eslint-plugin-flowtype": "^3.13.0",
+    "typedoc": "^0.16.9"
+  },
+  "jest": {
+    "coveragePathIgnorePatterns": [
+      "src/index.ts",
+      "src/serviceWorker.ts"
+    ]
+  }
+}
