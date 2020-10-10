@@ -2,17 +2,9 @@ import React, { Component } from 'react';
 import { Client } from 'colyseus.js';
 import AppData from '../model/AppData';
 import Player from '../model/Player';
-import { GAME_MAPS, GAME_MODES } from '../model/Settings'
 
-import { Select } from '@rmwc/select';
-import { Chip } from '@rmwc/chip';
-import { Card, CardMedia, CardPrimaryAction } from '@rmwc/card';
-import { Typography } from '@rmwc/typography';
-import { Grid, GridCell, GridRow } from '@rmwc/grid';
-import { PlayerCard } from './PlayerCard';
-import {
-  TopAppBar, TopAppBarRow, TopAppBarSection, TopAppBarTitle, 
-  TopAppBarFixedAdjust } from '@rmwc/top-app-bar';
+import * as BABYLON from 'babylonjs';
+
 import RoomMeta from '../model/RoomMeta';
 
 
@@ -60,6 +52,43 @@ class JoinedRoom extends Component<{ appData: AppData, match: any }, RoomMeta> {
   }
 
   componentDidMount() {
+    const canvas: HTMLCanvasElement = (document.getElementById('renderCanvas') as HTMLCanvasElement);
+    (document.getElementById('main_body') as HTMLElement).style.overflow = 'hidden'
+    // Load the 3D engine
+    const engine = new BABYLON.Engine(canvas, true, {preserveDrawingBuffer: true, stencil: true});
+    // CreateScene function that creates and return the scene
+    function createScene(){
+        // Create a basic BJS Scene object
+        const scene = new BABYLON.Scene(engine);
+        // Create a FreeCamera, and set its position to {x: 0, y: 5, z: -10}
+        const camera = new BABYLON.FreeCamera('camera1', new BABYLON.Vector3(0, 5, -10), scene);
+        // Target the camera to scene origin
+        camera.setTarget(BABYLON.Vector3.Zero());
+        // Attach the camera to the canvas
+        camera.attachControl(canvas, false);
+        // Create a basic light, aiming 0, 1, 0 - meaning, to the sky
+        const light = new BABYLON.HemisphericLight('light1', new BABYLON.Vector3(0, 1, 0), scene);
+        // Create a built-in "sphere" shape; its constructor takes 6 params: name, segment, diameter, scene, updatable, sideOrientation
+        const sphere = BABYLON.Mesh.CreateSphere('sphere1', 16, 2, scene, false, BABYLON.Mesh.FRONTSIDE);
+        // Move the sphere upward 1/2 of its height
+        sphere.position.y = 1;
+        // Create a built-in "ground" shape; its constructor takes 6 params : name, width, height, subdivision, scene, updatable
+        const ground = BABYLON.Mesh.CreateGround('ground1', 6, 6, 2, scene, false);
+        // Return the created scene
+        return scene;
+    }
+    // call the createScene function
+    const scene = createScene();
+    // run the render loop
+    engine.runRenderLoop(function(){
+        scene.render();
+    });
+    engine.setSize(window.innerWidth, window.innerHeight)
+    // the canvas/window resize event handler
+    window.addEventListener('resize', function(){
+        engine.resize();
+    });
+
     let client: Client = this.props.appData.client;
     let appData: AppData = this.props.appData;
     client.getAvailableRooms().then(rooms => {
@@ -90,98 +119,9 @@ class JoinedRoom extends Component<{ appData: AppData, match: any }, RoomMeta> {
   }
 
   render() {
-    let rows: any[] = [];
-    const appData = this.props.appData
-    let currentPlayer: Player | undefined
-    Object.entries(this.players).forEach(
-      ([key, player]) => {
-        if (appData.currentRoom?.sessionId === player.id) {
-          currentPlayer = player;
-        }
-      }
-    );
-    Object.entries(this.players).forEach(
-      ([key, player]) => {
-        if (currentPlayer) {
-          rows.push((<PlayerCard
-            appData={this.props.appData}
-            key={player.id}
-            player={player} />))
-        }
-      }
-    );
-
-    let overview
-    if (currentPlayer?.admin) {
-      overview = (<div style={{ padding: '1rem' }}>
-        <Typography use="headline6" tag="div">
-          <Select label="Map" options={GAME_MAPS} defaultValue={this.state.map} onChange={(evt) => {
-            this.props.appData.currentRoom?.send('set_map', evt.currentTarget.value)
-          }} />
-        </Typography>
-        <Typography use="headline6" tag="div">
-          <Select label="Mode" options={GAME_MODES} defaultValue={this.state.mode} onChange={(evt) => {
-            this.props.appData.currentRoom?.send('set_mode', evt.currentTarget.value)
-          }} />
-        </Typography>
-        <Typography use="headline6" tag="div">
-          Players: { Object.keys(this.players).length }
-        </Typography>
-      </div>)
-    } else {
-      overview = (<div style={{ padding: '1rem' }}>
-      <Typography use="headline6" tag="div">
-        Map: <Chip label={ this.state.map } />
-      </Typography>
-      <Typography use="headline6" tag="div">
-        Mode: <Chip label={ this.state.mode } />
-      </Typography>
-      <Typography use="headline6" tag="div">
-        Players: { Object.keys(this.players).length }
-      </Typography>
-      </div>)
-    }
-
     return (
       <>
-        <TopAppBar>
-          <TopAppBarRow>
-            <TopAppBarSection>
-              <TopAppBarTitle>
-                {this.state.name}
-              </TopAppBarTitle>
-            </TopAppBarSection>
-            <TopAppBarSection alignEnd>
-            </TopAppBarSection>
-          </TopAppBarRow>
-        </TopAppBar>
-        <TopAppBarFixedAdjust />
-        <Grid>
-          <GridRow>
-            <GridCell span={2}>
-              <Card>
-                <CardPrimaryAction>
-                  <CardMedia
-                      sixteenByNine
-                      style={{
-                        backgroundImage: 'url(/maps/' + this.state.map + '.png)'
-                      }}
-                    />
-                  {overview}
-                </CardPrimaryAction>
-              </Card>
-            </GridCell>
-
-            <GridCell span={10}>
-              <Typography use="headline6" tag="div">
-                Player:
-              </Typography>
-              <Grid>
-                {rows}
-              </Grid>
-            </GridCell>
-          </GridRow>
-        </Grid>
+        <canvas id="renderCanvas"></canvas>
       </>
     );
   }

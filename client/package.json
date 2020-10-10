@@ -26,6 +26,7 @@
     "@types/react-color": "^3.0.4",
     "@types/react-dom": "^16.9.5",
     "@types/react-router-dom": "^5.1.5",
+    "babylonjs": "^4.1.0",
     "colyseus.js": "^0.13.2",
     "express": "^4.17.1",
     "history": "^4.10.1",
