@@ -1,6 +1,8 @@
 import { Room, Client } from "colyseus";
-import { GAME_MODES, GAME_MAPS } from './Settings'
-import { Schema, MapSchema, type } from "@colyseus/schema";
+import { GAME_MODES, GAME_MAPS } from '../Settings'
+
+import { Player } from "../entities/Player.ts";
+import { StateHandler } from "../entities/StateHandler.ts";
 
 function getRandomColor () {
   const letters = '0123456789ABCDEF';
@@ -11,25 +13,15 @@ function getRandomColor () {
   return color;
 }
 
-class Player extends Schema {
-  @type("string") id: string;
-  @type("string") name: string;
-  @type("string") color: string;
-  @type("boolean") admin: boolean;
-}
-
-class State extends Schema {
-  @type({ map: Player }) players = new MapSchema();
-}
-
 // Rename to something-game
 export class GameRoom extends Room {
     firstUser: boolean = true
 
     // When the room is initialized
     onCreate (options: any) { 
-      const state = new State()
+      const state = new StateHandler()
       this.setState(state);
+      this.setSimulationInterval(() => this.onUpdate());
       options.name = `New Game`
       options.mode = GAME_MODES[0]
       options.map = GAME_MAPS[0]
@@ -51,6 +43,10 @@ export class GameRoom extends Room {
           this.broadcast("update_mode", mode)
         }
       });
+      this.onMessage("key", (client, message) => {
+        const player: Player = state.players[client.sessionId];
+        player.pressedKeys = message;
+      });
       this.onMessage('set_map', (client, map) => {
         // handle player message
         const player = state.players[client.sessionId]
@@ -60,6 +56,14 @@ export class GameRoom extends Room {
           this.broadcast("update_map", map)
         }
       });
+    }
+
+    onUpdate () {
+      for (const sessionId in this.state.players) {
+          const player: Player = this.state.players[sessionId];
+          player.position.x += player.pressedKeys.x * 0.1;
+          player.position.z -= player.pressedKeys.y * 0.1;
+      }
     }
 
     // When client successfully join the room
