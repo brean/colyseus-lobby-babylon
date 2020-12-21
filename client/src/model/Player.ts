@@ -12,4 +12,5 @@ export class Player extends Schema {
   @type("string") color: string = '#ff0000';
   @type("boolean") admin: boolean = false;
   @type(Position) position = new Position();
+  @type("number") rotation: number = 0.0;
 }

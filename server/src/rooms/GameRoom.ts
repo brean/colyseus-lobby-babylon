@@ -1,6 +1,5 @@
 import { Room, Client } from "colyseus";
-import { GAME_MODES, GAME_MAPS } from '../Settings'
-
+import { GAME_MODES, GAME_MAPS } from '../Settings';
 import { Player } from "../entities/Player.ts";
 import { StateHandler } from "../entities/StateHandler.ts";
 
@@ -43,9 +42,9 @@ export class GameRoom extends Room {
           this.broadcast("update_mode", mode)
         }
       });
-      this.onMessage("key", (client, message) => {
+      this.onMessage('velocity', (client, message) => {
         const player: Player = state.players[client.sessionId];
-        player.pressedKeys = message;
+        player.velocity = message;
       });
       this.onMessage('set_map', (client, map) => {
         // handle player message
@@ -61,8 +60,20 @@ export class GameRoom extends Room {
     onUpdate () {
       for (const sessionId in this.state.players) {
           const player: Player = this.state.players[sessionId];
-          player.position.x += player.pressedKeys.x * 0.1;
-          player.position.z -= player.pressedKeys.y * 0.1;
+          if (isNaN(player.rotation)) {
+            player.rotation = 0;
+          }
+          // simple anti-cheat: max speed for velocities
+          player.velocity.linear.x = Math.min(player.velocity.linear.x, 1)
+          player.velocity.linear.x = Math.max(player.velocity.linear.x, -1)
+          player.velocity.linear.y = Math.min(player.velocity.linear.y, 1)
+          player.velocity.linear.y = Math.max(player.velocity.linear.y, -1)
+          player.velocity.rotation = Math.min(player.velocity.rotation, 1)
+          player.velocity.rotation = Math.max(player.velocity.rotation, -1)
+          player.position.x += player.velocity.linear.x * 0.1;
+          player.position.y += player.velocity.linear.y * 0.1;
+          player.position.z += player.velocity.linear.z * 0.1;
+          player.rotation += player.velocity.rotation * 0.1;
       }
     }
 

@@ -49,7 +49,6 @@ class PlayerCard extends Component<
       dialog = (<Dialog
         open={this.state.open}
         onClose={evt => {
-          console.log(evt.detail.action);
           if (evt.detail.action === 'close') {
             // reset color
             player.color = this.oldPlayer.color;

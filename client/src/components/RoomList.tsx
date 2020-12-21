@@ -50,7 +50,6 @@ class RoomList extends Component<{ appData: AppData }, SelectedFilter> {
     let client: Client = this.props.appData.client;
     client.getAvailableRooms().then(serverRoom => {
       serverRoom.forEach((room: RoomAvailable<RoomMeta>) => {
-        console.log(room);
         this.rooms.push(room);
         this.forceUpdate();
       })

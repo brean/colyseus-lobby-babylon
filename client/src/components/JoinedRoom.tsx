@@ -4,11 +4,11 @@ import AppData from '../model/AppData';
 import { Player } from '../model/Player';
 
 import RoomMeta from '../model/RoomMeta';
-import LobbyLevel from '../babylon/LobbyLevel'
+import Game from '../babylon/Game'
 
 class JoinedRoom extends Component<{ appData: AppData, match: any }, RoomMeta> {
   players: {[id: string]: Player; } = {};
-  level: LobbyLevel
+  game: Game
 
   constructor(props: { appData: AppData, match: any }) {
     super(props);
@@ -18,27 +18,27 @@ class JoinedRoom extends Component<{ appData: AppData, match: any }, RoomMeta> {
   processCurrentRoom() {
     const appData: AppData = this.props.appData;
     const room = appData.currentRoom;
-    this.level = new LobbyLevel(room)
+    this.game = new Game(room)
     if (!room) {
       return;
     }
     room.state.players.onAdd = (player: Player) => {
       this.players[player.id] = player
       if (room.sessionId === player.id) {
-        this.level?.setPlayerId(player.id);
+        this.game?.setPlayerId(player.id);
       }
-      this.level?.addPlayer(player);
+      this.game?.addPlayer(player);
       this.forceUpdate();
     }
   
     room.state.players.onRemove = (player: Player) => {
-      this.level?.removePlayer(player);
+      this.game?.removePlayer(player);
       delete this.players[player.id];
       this.forceUpdate();
     }
   
     room.state.players.onChange = (player: Player) => {
-      this.level?.updatePlayer(player)
+      this.game?.updatePlayer(player)
       this.forceUpdate();
     }
     room.onMessage('update_map', (msg: string) => {
@@ -69,10 +69,8 @@ class JoinedRoom extends Component<{ appData: AppData, match: any }, RoomMeta> {
       // TODO: only when the room did not just get created
       // get session id from client?
       this.forceUpdate();
-      const state = room.state
       appData.currentRoom = room;
       this.processCurrentRoom()
-      console.log(state)
       return true;
     }).catch((msg: string) => {
       console.log(msg);
