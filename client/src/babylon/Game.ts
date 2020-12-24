@@ -12,7 +12,7 @@ export default class Game {
   engine: BABYLON.Engine
   light?: BABYLON.HemisphericLight
   camera: BABYLON.FollowCamera
-  playerMesh = new Map<string, BABYLON.AbstractMesh[]>()
+  playerMeshes = new Map<string, BABYLON.AbstractMesh[]>()
   playerId: string = 'NotYou'
   player?: Player
   room: Room
@@ -97,15 +97,16 @@ export default class Game {
         this.setMaterialColor(
           meshes[0].material as BABYLON.StandardMaterial, player.color)
       }
-      const playerMesh = this.playerMesh.get(player.id)
-      if (playerMesh) {
-        this.playerMesh.set(player.id, playerMesh.concat(meshes))
+      const playerMeshes = this.playerMeshes.get(player.id)
+      if (playerMeshes) {
+        this.playerMeshes.set(player.id, playerMeshes.concat(meshes))
       } else {
-        this.playerMesh.set(player.id, meshes)
+        this.playerMeshes.set(player.id, meshes)
       }
       if (player.id === this.playerId) {
         this.player = player;
       }
+      this.updatePlayer(player);
     })
     BABYLON.SceneLoader.ImportMesh(
       '', '/obj/', 'character_dog.obj', 
@@ -114,17 +115,28 @@ export default class Game {
         this.setMaterialColor(
           meshes[0].material as BABYLON.StandardMaterial, player.color)
       }
-      const playerMesh = this.playerMesh.get(player.id)
-      if (playerMesh) {
-        this.playerMesh.set(player.id, playerMesh.concat(meshes))
+      const playerMeshes = this.playerMeshes.get(player.id)
+      if (playerMeshes) {
+        this.playerMeshes.set(player.id, playerMeshes.concat(meshes))
       } else {
-        this.playerMesh.set(player.id, meshes)
+        this.playerMeshes.set(player.id, meshes)
       }
+      this.updatePlayer(player);
     })
   }
 
   updatePlayer(player: Player) {
-    const meshes = this.playerMesh.get(player.id)
+    const meshes = this.updatePlayerMesh(player)
+    if (meshes && this.camera && player.id === this.playerId) {
+      const camera = this.camera
+      camera.position.x = meshes[0].position.x + this.cameraPosition.x
+      camera.position.y = meshes[0].position.y + this.cameraPosition.y
+      camera.position.z = meshes[0].position.z + this.cameraPosition.z
+    }
+  }
+
+  updatePlayerMesh(player:Player) {
+    const meshes = this.playerMeshes.get(player.id)
     if (!meshes) {
       return
     }
@@ -134,23 +146,18 @@ export default class Game {
         mesh.rotation.set(0, player.pose.rotation, 0)
       }
     }
-    if (meshes && this.camera && player.id === this.playerId) {
-      const camera = this.camera
-      camera.position.x = meshes[0].position.x + this.cameraPosition.x
-      camera.position.y = meshes[0].position.y + this.cameraPosition.y
-      camera.position.z = meshes[0].position.z + this.cameraPosition.z
-    }
+    return meshes
   }
 
   removePlayer(player: Player) {
-    const meshes = this.playerMesh.get(player.id)
+    const meshes = this.playerMeshes.get(player.id)
     if (!meshes) {
       return
     }
     for (const mesh of meshes) {
       this.scene.removeMesh(mesh);
     }
-    this.playerMesh.delete(player.id)
+    this.playerMeshes.delete(player.id)
   }
 
 }

@@ -15,8 +15,8 @@ function getRandomColor () {
 // Rename to something-game
 export class GameRoom extends Room {
     firstUser: boolean = true
-    maxSpeed: number = 1
-    minSpeed: number = -1
+    maxSpeed: number = .2
+    minSpeed: number = -.2
 
     // When the room is initialized
     onCreate (options: any) { 
@@ -86,6 +86,8 @@ export class GameRoom extends Room {
       playerData.id = client.sessionId
       playerData.name = "New Player"
       playerData.color = getRandomColor()
+      playerData.pose.x = Math.random()
+      playerData.pose.z = Math.random()
       playerData.admin = this.firstUser;
       this.firstUser = false;
       this.state.players[client.sessionId] = playerData

@@ -31,7 +31,6 @@ export default class PlayerControls {
       this.initKeyboard();
       this.initMouse();
     }
-
     this.scene.onBeforeRenderObservable.add(this.updateInputs.bind(this));
   }
 
@@ -63,17 +62,10 @@ export default class PlayerControls {
     let input:boolean = false
     // keyboard control
     if (this.keyboard) {
-      if (this.inputMap.get('ArrowUp')) {
+      if (this.inputMap.get('ArrowUp') || this.inputMap.get('w')) {
         input = true
         speed = speedMultiplier
-      } else if (this.inputMap.get('ArrowDown')) {
-        input = true
-        speed = -speedMultiplier
-      }
-      else if (this.inputMap.get('w')) {
-        input = true
-        speed = speedMultiplier
-      } else if (this.inputMap.get('s')) {
+      } else if (this.inputMap.get('ArrowDown') || this.inputMap.get('s')) {
         input = true
         speed = -speedMultiplier
       }
@@ -85,10 +77,11 @@ export default class PlayerControls {
         Math.pow(this.leftStick.posY/40, 2)
       )
       speed *= speedMultiplier;
-      
-      this.orientation = -Math.atan2(
-        this.leftStick.posY/40,
-        this.leftStick.posX/40)
+      if (speed > 0) {
+        this.orientation = -Math.atan2(
+          this.leftStick.posY/40,
+          this.leftStick.posX/40)
+      }
     }
     const movement = {
       speed: speed, 
