@@ -1,87 +1,102 @@
 import * as BABYLON from 'babylonjs'
 import { Room } from 'colyseus.js'
 import VirtualJoystick from './VirtualJoystick'
+import Game from './Game'
 
 // System dependend Controls: Keyboard or (Virtual) Joystick controls
 
 export default class PlayerControls {
   room: Room
-
+  
+  engine: BABYLON.Engine
   scene: BABYLON.Scene
   canvas: HTMLCanvasElement
   
   sticks: boolean = false
   leftStick: VirtualJoystick|undefined = undefined
-  rightStick: VirtualJoystick|undefined = undefined
   
   keyboard: boolean = false
-  inputMap = new Map<string, boolean>()
+  inputMap: Map<string, boolean> = new Map<string, boolean>()
 
-  constructor (scene: BABYLON.Scene, room: Room, canvas: HTMLCanvasElement) {
-    this.scene = scene;
-    this.room = room;
-    this.canvas = canvas;
+  orientation: number = 0.0
+
+  constructor (game: Game) {
+    this.scene = game.scene;
+    this.canvas = game.canvas;
+    this.engine = game.engine;
+    this.room = game.room;
     if (this.isMobile()) {
       this.initVirtualJoystick();
     } else {
       this.initKeyboard();
-      // TODO: initMouse
+      this.initMouse();
     }
 
-    scene.onBeforeRenderObservable.add(this.updateInputs.bind(this));
+    this.scene.onBeforeRenderObservable.add(this.updateInputs.bind(this));
+  }
+
+  initMouse() {
+    this.scene.onPointerObservable.add(
+      this.onPointerMove.bind(this),
+      BABYLON.PointerEventTypes.POINTERMOVE);
+  }
+
+  onPointerMove() {
+    const x = this.scene.pointerX;
+    const y = this.scene.pointerY;
+    const width = this.engine.getRenderWidth();
+    const height = this.engine.getRenderHeight()
+    const mouseVec = new BABYLON.Vector3(x, y, 0);
+    mouseVec.x = (mouseVec.x * 2) / width - 1;
+    mouseVec.y = (mouseVec.y * 2) / height - 1;
+    this.orientation = Math.atan2(mouseVec.y, mouseVec.x);
   }
 
   initVirtualJoystick () {
     this.leftStick = new VirtualJoystick(this.canvas);
-    this.rightStick = new VirtualJoystick(this.canvas, "red", false);
     this.sticks = true;
   }
 
   updateInputs() {
-    const linear: {x: number, y: number, z: number} = { x: 0, y: 0, z: 0 };
-    let rotation: number = 0.0
+    let speed: number = 0.0
+    const speedMultiplier = 0.2
     let input:boolean = false
+    // keyboard control
     if (this.keyboard) {
-      if (this.inputMap.get('w')) {
+      if (this.inputMap.get('ArrowUp')) {
         input = true
-        linear.x += -1;
-        linear.z += 1;
+        speed = speedMultiplier
+      } else if (this.inputMap.get('ArrowDown')) {
+        input = true
+        speed = -speedMultiplier
+      }
+      else if (this.inputMap.get('w')) {
+        input = true
+        speed = speedMultiplier
       } else if (this.inputMap.get('s')) {
         input = true
-        linear.x += 1;
-        linear.z += -1;
-      }
-      if (this.inputMap.get('a')) {
-        input = true
-        linear.x += -1;
-        linear.z += -1;
-      } else if (this.inputMap.get('d')) {
-        input = true
-        linear.x += 1;
-        linear.z += 1;
-      }
-
-      if (this.inputMap.get('ArrowLeft')) {
-        input = true
-        rotation = -1;
-      } else if (this.inputMap.get('ArrowRight')) {
-        input = true
-        rotation = 1; 
+        speed = -speedMultiplier
       }
     }
-    if (this.sticks && !input) {
-      if (this.leftStick) {
-        linear.x += this.leftStick.posX/40;
-        linear.z += this.leftStick.posY/40;
-      }
-      if (this.rightStick) {
-        rotation = this.rightStick.posX/40;
-      }
+    // virtual joystick control
+    if (this.leftStick && !input) {
+      speed = Math.sqrt(
+        Math.pow(this.leftStick.posX/40, 2) +
+        Math.pow(this.leftStick.posY/40, 2)
+      )
+      speed *= speedMultiplier;
+      
+      this.orientation = -Math.atan2(
+        this.leftStick.posY/40,
+        this.leftStick.posX/40)
     }
-      const velocity = {linear, rotation}
-      if (this.room) {
-        this.room.send('velocity', velocity);
-      }
+    const movement = {
+      speed: speed, 
+      orientation: this.orientation
+    }
+    if (this.room) {
+      this.room.send('move', movement);
+    }
   }
 
   initKeyboard () {

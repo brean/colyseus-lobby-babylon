@@ -15,6 +15,8 @@ function getRandomColor () {
 // Rename to something-game
 export class GameRoom extends Room {
     firstUser: boolean = true
+    maxSpeed: number = 1
+    minSpeed: number = -1
 
     // When the room is initialized
     onCreate (options: any) { 
@@ -26,7 +28,6 @@ export class GameRoom extends Room {
       options.map = GAME_MAPS[0]
       options.started = false
       this.setMetadata(options);
-      console.log('create: opt', options)
       this.onMessage('change_player', (client, player) => {
         // handle player message
         const p = state.players[client.sessionId]
@@ -42,9 +43,10 @@ export class GameRoom extends Room {
           this.broadcast("update_mode", mode)
         }
       });
-      this.onMessage('velocity', (client, message) => {
+      this.onMessage('move', (client, message) => {
         const player: Player = state.players[client.sessionId];
-        player.velocity = message;
+        player.speed = message.speed;
+        player.orientation = message.orientation;
       });
       this.onMessage('set_map', (client, map) => {
         // handle player message
@@ -59,21 +61,21 @@ export class GameRoom extends Room {
 
     onUpdate () {
       for (const sessionId in this.state.players) {
-          const player: Player = this.state.players[sessionId];
-          if (isNaN(player.rotation)) {
-            player.rotation = 0;
-          }
-          // simple anti-cheat: max speed for velocities
-          player.velocity.linear.x = Math.min(player.velocity.linear.x, 1)
-          player.velocity.linear.x = Math.max(player.velocity.linear.x, -1)
-          player.velocity.linear.y = Math.min(player.velocity.linear.y, 1)
-          player.velocity.linear.y = Math.max(player.velocity.linear.y, -1)
-          player.velocity.rotation = Math.min(player.velocity.rotation, 1)
-          player.velocity.rotation = Math.max(player.velocity.rotation, -1)
-          player.position.x += player.velocity.linear.x * 0.1;
-          player.position.y += player.velocity.linear.y * 0.1;
-          player.position.z += player.velocity.linear.z * 0.1;
-          player.rotation += player.velocity.rotation * 0.1;
+        const player: Player = this.state.players[sessionId];
+        if (isNaN(player.orientation)) {
+          continue
+        }
+
+        player.pose.rotation = player.orientation;
+        if (player.speed !== 0 && !isNaN(player.speed)) {
+          const x = Math.sin(player.orientation)
+          const z = Math.cos(player.orientation)
+          // simple anti-cheat: min/max speed for velocities
+          player.speed = Math.min(player.speed, this.maxSpeed)
+          player.speed = Math.max(player.speed, this.minSpeed)
+          player.pose.z += z * player.speed
+          player.pose.x += x * player.speed
+        }
       }
     }
 

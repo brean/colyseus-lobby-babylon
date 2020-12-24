@@ -11,11 +11,12 @@ export default class Game {
   scene: BABYLON.Scene
   engine: BABYLON.Engine
   light?: BABYLON.HemisphericLight
-  camera?: BABYLON.FollowCamera
+  camera: BABYLON.FollowCamera
   playerMesh = new Map<string, BABYLON.AbstractMesh[]>()
   playerId: string = 'NotYou'
-  player: Player|undefined = undefined
+  player?: Player
   room: Room
+  cameraPosition: BABYLON.Vector3 = new BABYLON.Vector3(12, 12, 0)
   controls: PlayerControls
 
   constructor (room: Room, level = 'lobby') {
@@ -32,7 +33,8 @@ export default class Game {
       });
     this.scene = new BABYLON.Scene(this.engine)
     this.createScene();
-    this.controls = new PlayerControls(this.scene, room, this.canvas);
+    this.camera = this.createCamera();
+    this.controls = new PlayerControls(this);
     this.run();
     this.resize();
 
@@ -53,7 +55,6 @@ export default class Game {
   /** fill scene with light, camera and load the level */
   createScene() {
     this.createLight();
-    this.createCamera();
     new LobbyLevel(this.scene)
   }
 
@@ -63,12 +64,13 @@ export default class Game {
 
   createCamera() {
     // Create a FreeCamera, and set its position to {x: 0, y: 5, z: 10}
-    this.camera = new BABYLON.FollowCamera(
-      'camera1', new BABYLON.Vector3(12, 12, -12), this.scene);
+    const camera = new BABYLON.FollowCamera(
+      'camera1', this.cameraPosition.clone(), this.scene);
     // Target the camera to scene origin
-    this.camera.setTarget(BABYLON.Vector3.Zero());
+    camera.setTarget(BABYLON.Vector3.Zero());
     // Attach the camera to the canvas
-    this.camera.attachControl(false);
+    camera.attachControl(false);
+    return camera;
   }
 
   run () {
@@ -103,7 +105,6 @@ export default class Game {
       }
       if (player.id === this.playerId) {
         this.player = player;
-        console.log(player.id, this.playerId)
       }
     })
     BABYLON.SceneLoader.ImportMesh(
@@ -128,14 +129,16 @@ export default class Game {
       return
     }
     for (const mesh of meshes) {
-      mesh.position.set(player.position.x, player.position.y, player.position.z)
-      mesh.rotation.set(0, player.rotation, 0)
+      mesh.position.set(player.pose.x, player.pose.y, player.pose.z)
+      if (player.pose.rotation !== undefined) {
+        mesh.rotation.set(0, player.pose.rotation, 0)
+      }
     }
     if (meshes && this.camera && player.id === this.playerId) {
       const camera = this.camera
-      camera.position.x = meshes[0].position.x + 12
-      camera.position.y = meshes[0].position.y + 12
-      camera.position.z = meshes[0].position.z - 12
+      camera.position.x = meshes[0].position.x + this.cameraPosition.x
+      camera.position.y = meshes[0].position.y + this.cameraPosition.y
+      camera.position.z = meshes[0].position.z + this.cameraPosition.z
     }
   }
 

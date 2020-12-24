@@ -87,7 +87,6 @@ export default class VirtualJoystick {
       this.posY = this.canvas.height - coordinates.y-thumbWidth+this.bottomJoystickOffset;
       this.puck.left = this.posX;
       this.puck.top = -this.posY;
-      console.log(this.posX, -this.posY)
     }
   }
 

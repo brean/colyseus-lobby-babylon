@@ -73,7 +73,6 @@ class JoinedRoom extends Component<{ appData: AppData, match: any }, RoomMeta> {
       this.processCurrentRoom()
       return true;
     }).catch((msg: string) => {
-      console.log(msg);
       this.props.appData.history.push('/');
     })
 
