@@ -1,0 +1,24 @@
+{
+    "width": 48,
+    "length": 36,
+    "height": 1,
+    "description": "the lobby level",
+    "default_type": "neutral",
+    "default_size": 6,
+    "areas": [
+        {
+            "x": -12,
+            "z": -6,
+            "size": 6,
+            "name": "teamRed",
+            "type": "change_character"
+        },
+        {
+            "x": -12,
+            "z": 6,
+            "size": 6,
+            "name": "teamBlue",
+            "type": "change_color"
+        }
+    ]
+}

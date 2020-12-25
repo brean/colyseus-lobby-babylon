@@ -29,6 +29,13 @@ class JoinedRoom extends Component<{ appData: AppData, match: any }, RoomMeta> {
       }
       this.game?.addPlayer(player);
       this.forceUpdate();
+
+      player.onChange = (changes) => {
+        console.log(changes)
+        console.log(player.x)
+        this.game?.updatePlayer(player);
+        this.forceUpdate();
+      }
     }
   
     room.state.players.onRemove = (player: Player) => {
@@ -37,10 +44,6 @@ class JoinedRoom extends Component<{ appData: AppData, match: any }, RoomMeta> {
       this.forceUpdate();
     }
   
-    room.state.players.onChange = (player: Player) => {
-      this.game?.updatePlayer(player)
-      this.forceUpdate();
-    }
     room.onMessage('update_map', (msg: string) => {
       this.setState({map: msg})
     })

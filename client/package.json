@@ -29,7 +29,7 @@
     "babylonjs": "^4.2.0",
     "babylonjs-gui": "^4.2.0",
     "babylonjs-loaders": "^4.2.0",
-    "colyseus.js": "^0.13.2",
+    "colyseus.js": "^0.14.1",
     "express": "^4.17.1",
     "history": "^4.10.1",
     "nodemon": "^2.0.6",

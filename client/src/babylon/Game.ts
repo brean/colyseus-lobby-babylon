@@ -1,9 +1,8 @@
 // Game Environment
 import * as BABYLON from 'babylonjs'
-import { AbstractMesh } from 'babylonjs'
 import { Room } from 'colyseus.js'
 import { Player } from '../model/Player'
-import LobbyLevel from './LobbyLevel'
+import LevelLoader from './LevelLoader'
 import PlayerControls from './PlayerControls'
 
 export default class Game {
@@ -18,13 +17,13 @@ export default class Game {
   room: Room
   cameraPosition: BABYLON.Vector3 = new BABYLON.Vector3(12, 12, 0)
   controls: PlayerControls
+  loader: LevelLoader;
 
   constructor (room: Room, level = 'lobby') {
     this.room = room;
     this.canvas = (document.getElementById('renderCanvas') as HTMLCanvasElement);
     (document.getElementById('main_body') as HTMLElement).style.overflow = 'hidden'
     // Load the 3D engine
-    
     this.engine = new BABYLON.Engine(
       this.canvas, true,
       {
@@ -32,6 +31,7 @@ export default class Game {
         stencil: true
       });
     this.scene = new BABYLON.Scene(this.engine)
+    this.loader = new LevelLoader(this.scene, level);
     this.createScene();
     this.camera = this.createCamera();
     this.controls = new PlayerControls(this);
@@ -55,7 +55,7 @@ export default class Game {
   /** fill scene with light, camera and load the level */
   createScene() {
     this.createLight();
-    new LobbyLevel(this.scene)
+    // new LobbyLevel(this.scene)
   }
 
   createLight() {
@@ -93,36 +93,38 @@ export default class Game {
     BABYLON.SceneLoader.ImportMesh(
       '', '/obj/', 'character_dogHead.obj', 
       this.scene, (meshes) => {
-      if (meshes[0].material) {
-        this.setMaterialColor(
-          meshes[0].material as BABYLON.StandardMaterial, player.color)
+        if (meshes[0].material) {
+          this.setMaterialColor(
+            meshes[0].material as BABYLON.StandardMaterial, player.color)
+        }
+        const playerMeshes = this.playerMeshes.get(player.id)
+        if (playerMeshes) {
+          this.playerMeshes.set(player.id, meshes.concat(playerMeshes))
+        } else {
+          this.playerMeshes.set(player.id, meshes)
+        }
+        if (player.id === this.playerId) {
+          this.player = player;
+        }
+        this.updatePlayer(player);
       }
-      const playerMeshes = this.playerMeshes.get(player.id)
-      if (playerMeshes) {
-        this.playerMeshes.set(player.id, playerMeshes.concat(meshes))
-      } else {
-        this.playerMeshes.set(player.id, meshes)
-      }
-      if (player.id === this.playerId) {
-        this.player = player;
-      }
-      this.updatePlayer(player);
-    })
+    )
     BABYLON.SceneLoader.ImportMesh(
       '', '/obj/', 'character_dog.obj', 
       this.scene, (meshes) => {
-      if (meshes[0].material) {
-        this.setMaterialColor(
-          meshes[0].material as BABYLON.StandardMaterial, player.color)
+        if (meshes[0].material) {
+          this.setMaterialColor(
+            meshes[0].material as BABYLON.StandardMaterial, player.color)
+        }
+        const playerMeshes = this.playerMeshes.get(player.id)
+        if (playerMeshes) {
+          this.playerMeshes.set(player.id, meshes.concat(playerMeshes))
+        } else {
+          this.playerMeshes.set(player.id, meshes)
+        }
+        this.updatePlayer(player);
       }
-      const playerMeshes = this.playerMeshes.get(player.id)
-      if (playerMeshes) {
-        this.playerMeshes.set(player.id, playerMeshes.concat(meshes))
-      } else {
-        this.playerMeshes.set(player.id, meshes)
-      }
-      this.updatePlayer(player);
-    })
+    )
   }
 
   updatePlayer(player: Player) {
@@ -141,9 +143,9 @@ export default class Game {
       return
     }
     for (const mesh of meshes) {
-      mesh.position.set(player.pose.x, player.pose.y, player.pose.z)
-      if (player.pose.rotation !== undefined) {
-        mesh.rotation.set(0, player.pose.rotation, 0)
+      mesh.position.set(player.x, player.y, player.z)
+      if (player.rotation !== undefined) {
+        mesh.rotation.set(0, player.rotation, 0)
       }
     }
     return meshes
@@ -159,5 +161,4 @@ export default class Game {
     }
     this.playerMeshes.delete(player.id)
   }
-
 }
