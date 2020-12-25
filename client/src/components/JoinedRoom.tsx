@@ -31,8 +31,6 @@ class JoinedRoom extends Component<{ appData: AppData, match: any }, RoomMeta> {
       this.forceUpdate();
 
       player.onChange = (changes) => {
-        console.log(changes)
-        console.log(player.x)
         this.game?.updatePlayer(player);
         this.forceUpdate();
       }
