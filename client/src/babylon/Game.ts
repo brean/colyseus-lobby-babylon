@@ -9,7 +9,6 @@ export default class Game {
   canvas: HTMLCanvasElement
   scene: BABYLON.Scene
   engine: BABYLON.Engine
-  light?: BABYLON.HemisphericLight
   camera: BABYLON.FollowCamera
   playerMeshes = new Map<string, BABYLON.AbstractMesh[]>()
   playerId: string = 'NotYou'
@@ -18,6 +17,7 @@ export default class Game {
   cameraPosition: BABYLON.Vector3 = new BABYLON.Vector3(12, 12, 0)
   controls: PlayerControls
   loader: LevelLoader;
+  shadowGenerator?: BABYLON.ShadowGenerator;
 
   constructor (room: Room, level = 'lobby') {
     this.room = room;
@@ -31,8 +31,8 @@ export default class Game {
         stencil: true
       });
     this.scene = new BABYLON.Scene(this.engine)
-    this.loader = new LevelLoader(this.scene, level);
-    this.createScene();
+    this.createLight();
+    this.loader = new LevelLoader(this.scene, level, this.shadowGenerator);
     this.camera = this.createCamera();
     this.controls = new PlayerControls(this);
     this.run();
@@ -52,14 +52,16 @@ export default class Game {
     material.diffuseColor = BABYLON.Color3.FromHexString(color)
   }
 
-  /** fill scene with light, camera and load the level */
-  createScene() {
-    this.createLight();
-    // new LobbyLevel(this.scene)
-  }
-
   createLight() {
-    this.scene.createDefaultLight(true)
+    this.scene.createDefaultLight(true);
+
+    const light = new BABYLON.DirectionalLight("dir01", new BABYLON.Vector3(-1, -1, -1), this.scene);
+    light.position = new BABYLON.Vector3(12, 12, 12);
+    light.intensity = 0.3;
+
+    this.shadowGenerator = new BABYLON.ShadowGenerator(1024, light);
+    this.shadowGenerator.useExponentialShadowMap = true;
+  
   }
 
   createCamera() {
@@ -106,6 +108,9 @@ export default class Game {
         if (player.id === this.playerId) {
           this.player = player;
         }
+        for (const mesh of meshes) {
+          this.shadowGenerator?.addShadowCaster(mesh)
+        }
         this.updatePlayer(player);
       }
     )
@@ -121,6 +126,9 @@ export default class Game {
           this.playerMeshes.set(player.id, meshes.concat(playerMeshes))
         } else {
           this.playerMeshes.set(player.id, meshes)
+        }
+        for (const mesh of meshes) {
+          this.shadowGenerator?.addShadowCaster(mesh)
         }
         this.updatePlayer(player);
       }

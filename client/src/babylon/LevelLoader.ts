@@ -11,13 +11,15 @@ export default class LevelLoader {
     [1, 'Small'],
     [2, 'Medium']
   ]);
+  shadowGenerator?: BABYLON.ShadowGenerator;
 
   data: any;
   scene: BABYLON.Scene;
 
-  constructor(scene: BABYLON.Scene, name: string) {
+  constructor(scene: BABYLON.Scene, name: string, shadowGenerator?: BABYLON.ShadowGenerator) {
     this.name = name;
     this.scene = scene;
+    this.shadowGenerator = shadowGenerator;
 
     //see https://doc.babylonjs.com/how_to/obj
     BABYLON_LOADER.OBJFileLoader.OPTIMIZE_WITH_UV = false;
@@ -43,6 +45,7 @@ export default class LevelLoader {
                 mesh.position.y = -1;
                 mesh.position.x = area.x;
                 mesh.position.z = area.z;
+                mesh.receiveShadows = true;
               }
             }
           );
@@ -84,6 +87,7 @@ export default class LevelLoader {
               if (nmesh) {
                 nmesh.position.z = j;
                 nmesh.position.x = i;
+                nmesh.receiveShadows = true;
               }
             }
           }

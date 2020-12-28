@@ -1,6 +1,7 @@
 import { Room, Client } from "colyseus";
+import { World, Body, Box, Sphere, Vec3 } from 'cannon-es';
 import { GAME_MODES, GAME_MAPS } from '../Settings';
-import { Player, Pose } from "../entities/Player";
+import { Player } from "../entities/Player";
 import { StateHandler } from "../entities/StateHandler";
 
 function getRandomColor () {
@@ -18,16 +19,21 @@ export class GameRoom extends Room {
   maxSpeed: number = .2
   minSpeed: number = -.2
 
+  world: World = new World();
+  bodies: Map<string, Body> = new Map<string, Body>();
+  bodyRadius: number = 0.3;
+
   // When the room is initialized
-  onCreate (options: any) { 
+  onCreate (options: any) {
     const state = new StateHandler()
     this.setState(state);
-    this.setSimulationInterval(() => this.onUpdate());
+    this.setSimulationInterval((deltaTime) => this.onUpdate(deltaTime));
     options.name = `New Game`
     options.mode = GAME_MODES[0]
     options.map = GAME_MAPS[0]
     options.started = false
     this.setMetadata(options);
+    this.setupPhysics();
     this.onMessage('change_player', (client, player) => {
       // handle player message
       const p = state.players[client.sessionId]
@@ -59,23 +65,82 @@ export class GameRoom extends Room {
     });
   }
 
-  onUpdate () {
+  setupPhysics() {
+    this.world.gravity.set(0, 0, -9.82); // m/s²
+    // Create a plane
+    const groundBody = new Body({
+      mass: 0 // mass == 0 makes the body static
+    });
+    const groundShape = new Box(new Vec3(3,3,0.1));    ;
+    groundBody.position.z = -0.05;
+    groundBody.addShape(groundShape);
+    this.world.addBody(groundBody);
+  }
+
+  resetPlayerPhysics(body: Body, player: Player) {
+    // orientation
+    body.quaternion.set(0,0,0,1);
+    body.initQuaternion.set(0,0,0,1);
+    body.previousQuaternion.set(0,0,0,1);
+    body.interpolatedQuaternion.set(0,0,0,1);
+
+    // Velocity
+    body.velocity.setZero();
+    body.initVelocity.setZero();
+    body.angularVelocity.setZero();
+    body.initAngularVelocity.setZero();
+
+    // Force
+    body.force.setZero();
+    body.torque.setZero();
+
+    body.position.x = Math.random();
+    body.position.y = Math.random();
+    body.position.z = this.bodyRadius;
+
+    player.x = body.position.x;
+    player.z = body.position.y;
+    player.y = body.position.z;
+    player.speed = 0;
+  }
+
+  onUpdate (deltaTime: number) {
+    this.world.step(1.0/60, deltaTime, 3);
+    const speedMultiplier = 1.5;
     this.state.players.forEach((player, sessionId) => {
-      // const player: Player = this.state.players[sessionId];
-      if (isNaN(player.orientation)) {
+      // TODO: player as RigidBody!
+
+      let rotation = player.orientation
+      let speed = player.speed
+      let x = 0;
+      let z = 0;
+      if (speed !== 0 && !isNaN(speed)) {
+        x = Math.sin(rotation)
+        z = Math.cos(rotation)
+        // simple anti-cheat: min/max speed for velocities
+        speed = Math.min(speed, this.maxSpeed);
+        speed = Math.max(speed, this.minSpeed);
+
+        // TODO: add force instead of calculating x and y directly?
+        x *= player.speed * speedMultiplier;
+        z *= player.speed * speedMultiplier;
+        player.speed = speed  
+      }
+      let body = this.bodies.get(player.id);
+      if (body.position.z < -5) {
+        // reset, TODO: kill_count+=1
+        this.resetPlayerPhysics(body, player);
         return
+      } else {
+        body.position.x += x 
+        body.position.y += z
       }
 
-      player.rotation = player.orientation;
-      if (player.speed !== 0 && !isNaN(player.speed)) {
-        const x = Math.sin(player.orientation)
-        const z = Math.cos(player.orientation)
-        // simple anti-cheat: min/max speed for velocities
-        player.speed = Math.min(player.speed, this.maxSpeed)
-        player.speed = Math.max(player.speed, this.minSpeed)
-        player.z += z * player.speed
-        player.x += x * player.speed
-      }
+      player.x = body.position.x
+      player.z = body.position.y
+      player.y = body.position.z
+
+      player.rotation = rotation;
     });
   }
 
@@ -85,10 +150,18 @@ export class GameRoom extends Room {
       id: client.sessionId,
       name: 'New Player',
       color: getRandomColor(),
-      x: Math.random(),
-      z: Math.random(),
       admin: this.firstUser
     });
+
+    const radius = this.bodyRadius;
+    const sphereBody = new Body({
+       mass: 50, // kg
+       shape: new Sphere(radius)
+    });
+    this.resetPlayerPhysics(sphereBody, playerData)
+    this.bodies.set(playerData.id, sphereBody)
+    this.world.addBody(sphereBody);
+
     // Note that all player in the game will be given the sessionId of each other.
     this.firstUser = false;
     this.state.players[client.sessionId] = playerData
