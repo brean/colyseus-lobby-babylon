@@ -3,6 +3,7 @@ import { World, Body, Box, Sphere, Vec3 } from 'cannon-es';
 import { GAME_MODES, GAME_MAPS } from '../Settings';
 import { Player } from "../entities/Player";
 import { StateHandler } from "../entities/StateHandler";
+import * as fs from 'fs';
 
 function getRandomColor () {
   const letters = '0123456789ABCDEF';
@@ -22,6 +23,8 @@ export class GameRoom extends Room {
   world: World = new World();
   bodies: Map<string, Body> = new Map<string, Body>();
   bodyRadius: number = 0.3;
+
+  maps: Map<string, any> = new Map<string, any>();
 
   // When the room is initialized
   onCreate (options: any) {
@@ -67,12 +70,50 @@ export class GameRoom extends Room {
 
   setupPhysics() {
     this.world.gravity.set(0, 0, -9.82); // m/s²
-    // Create a plane
+    this.physicsFromMap('lobby')
+  }
+
+  physicsFromMap(map: string) {
+    const content = fs.readFileSync(`../client/public/maps/${map}.json`).toString()
+    const data = JSON.parse(content);
+    const size = data.default_size;
+    const maxX = data.length / 2;
+    const minX = -maxX;
+    const maxY = data.width / 2;
+    const minY = -maxY;
+    for (let i = minX; i < maxX; i+=size) {
+      for (let j = minY; j < maxY; j+=size) {
+        let cont = false;
+        for (const area of data.areas) {
+          if ((i === area.x) && (j === area.y)) {
+            cont = true;
+            break;
+          }
+        }
+        if (cont) {
+          continue;
+        }
+        this.addGroundPlate(i, j, size)
+      }
+    }
+
+    for (const area of data.areas) {
+      console.log(area);
+      if (area.type === 'hole') {
+        continue
+      }
+      this.addGroundPlate(area.x, area.y, area.size)
+    }
+  }
+
+  addGroundPlate(x, y, size) {
     const groundBody = new Body({
-      mass: 0 // mass == 0 makes the body static
+      mass: 0 // mass === 0 makes the body static
     });
-    const groundShape = new Box(new Vec3(3,3,0.1));    ;
-    groundBody.position.z = -0.05;
+    const groundShape = new Box(new Vec3(size/2,size/2,1));
+    groundBody.position.x = x;
+    groundBody.position.y = y;
+    groundBody.position.z = -1;
     groundBody.addShape(groundShape);
     this.world.addBody(groundBody);
   }
@@ -127,7 +168,8 @@ export class GameRoom extends Room {
         player.speed = speed  
       }
       let body = this.bodies.get(player.id);
-      if (body.position.z < -5) {
+
+      if (body.position.z < -10) {
         // reset, TODO: kill_count+=1
         this.resetPlayerPhysics(body, player);
         return
@@ -155,7 +197,7 @@ export class GameRoom extends Room {
 
     const radius = this.bodyRadius;
     const sphereBody = new Body({
-       mass: 50, // kg
+       mass: 2, // kg
        shape: new Sphere(radius)
     });
     this.resetPlayerPhysics(sphereBody, playerData)

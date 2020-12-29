@@ -13,8 +13,10 @@ export default class Game {
   playerMeshes = new Map<string, BABYLON.AbstractMesh[]>()
   playerId: string = 'NotYou'
   player?: Player
+  light?: BABYLON.DirectionalLight
   room: Room
   cameraPosition: BABYLON.Vector3 = new BABYLON.Vector3(12, 12, 0)
+  lightPosition: BABYLON.Vector3 = new BABYLON.Vector3(12, 12, 12)
   controls: PlayerControls
   loader: LevelLoader;
   shadowGenerator?: BABYLON.ShadowGenerator;
@@ -55,13 +57,12 @@ export default class Game {
   createLight() {
     this.scene.createDefaultLight(true);
 
-    const light = new BABYLON.DirectionalLight("dir01", new BABYLON.Vector3(-1, -1, -1), this.scene);
-    light.position = new BABYLON.Vector3(12, 12, 12);
-    light.intensity = 0.3;
+    this.light = new BABYLON.DirectionalLight("dir01", new BABYLON.Vector3(-1, -1, -1), this.scene);
+    this.light.position = new BABYLON.Vector3(12, 12, 12);
+    this.light.intensity = 0.3;
 
-    this.shadowGenerator = new BABYLON.ShadowGenerator(1024, light);
-    this.shadowGenerator.useExponentialShadowMap = true;
-  
+    this.shadowGenerator = new BABYLON.ShadowGenerator(256, this.light);
+    this.shadowGenerator.useExponentialShadowMap = false;
   }
 
   createCamera() {
@@ -109,7 +110,7 @@ export default class Game {
           this.player = player;
         }
         for (const mesh of meshes) {
-          this.shadowGenerator?.addShadowCaster(mesh)
+          this.shadowGenerator?.addShadowCaster(mesh, true)
         }
         this.updatePlayer(player);
       }
@@ -128,7 +129,7 @@ export default class Game {
           this.playerMeshes.set(player.id, meshes)
         }
         for (const mesh of meshes) {
-          this.shadowGenerator?.addShadowCaster(mesh)
+          this.shadowGenerator?.addShadowCaster(mesh, true)
         }
         this.updatePlayer(player);
       }
@@ -138,10 +139,16 @@ export default class Game {
   updatePlayer(player: Player) {
     const meshes = this.updatePlayerMesh(player)
     if (meshes && this.camera && player.id === this.playerId) {
+      const basePos = meshes[0].position;
       const camera = this.camera
-      camera.position.x = meshes[0].position.x + this.cameraPosition.x
-      camera.position.y = meshes[0].position.y + this.cameraPosition.y
-      camera.position.z = meshes[0].position.z + this.cameraPosition.z
+      camera.position.x = basePos.x + this.cameraPosition.x
+      camera.position.y = basePos.y + this.cameraPosition.y
+      camera.position.z = basePos.z + this.cameraPosition.z
+      if (this.light) {
+        this.light.position.x = basePos.x + this.lightPosition.x
+        this.light.position.y = basePos.y + this.lightPosition.y
+        this.light.position.z = basePos.z + this.lightPosition.z 
+      }
     }
   }
 
@@ -165,6 +172,7 @@ export default class Game {
       return
     }
     for (const mesh of meshes) {
+      this.shadowGenerator?.removeShadowCaster(mesh)
       this.scene.removeMesh(mesh);
     }
     this.playerMeshes.delete(player.id)

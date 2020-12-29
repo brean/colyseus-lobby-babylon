@@ -129,7 +129,9 @@ export default class PlayerControls {
     }
     // game pad
     if (this.gamepadActive && !input) {
-      this.calcSpeedAndOrientation(this.gamepadInput.x, -this.gamepadInput.y);
+      this.calcSpeedAndOrientation(
+        this.gamepadInput.x,
+        -this.gamepadInput.y);
     }
     const movement = {
       speed: this.speed, 

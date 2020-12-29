@@ -8,17 +8,23 @@
     "areas": [
         {
             "x": -12,
-            "z": -6,
+            "y": -6,
             "size": 6,
             "name": "teamRed",
             "type": "change_character"
         },
         {
             "x": -12,
-            "z": 6,
+            "y": 6,
             "size": 6,
             "name": "teamBlue",
             "type": "change_color"
+        },
+        {
+            "x": 6,
+            "y": 6,
+            "size": 6,
+            "type": "hole"
         }
     ]
 }

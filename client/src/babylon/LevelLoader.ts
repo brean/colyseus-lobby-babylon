@@ -37,6 +37,9 @@ export default class LevelLoader {
         // TODO: preloading!
         this.loadBackground();
         for (const area of this.data.areas) {
+          if (area.type === 'hole') {
+            continue
+          }
           const areaSize = this.tileNamesBySize.get(area.size);
           BABYLON.SceneLoader.ImportMesh(
             '', `/${this.basePathObj}/`, 
@@ -44,7 +47,7 @@ export default class LevelLoader {
               for (const mesh of meshes) {
                 mesh.position.y = -1;
                 mesh.position.x = area.x;
-                mesh.position.z = area.z;
+                mesh.position.z = area.y;
                 mesh.receiveShadows = true;
               }
             }
@@ -74,7 +77,7 @@ export default class LevelLoader {
           for (let j = minY; j < maxY; j+=size) {
             let cont = false;
             for (const area of this.data.areas) {
-              if ((i === area.x) && (j === area.z)) {
+              if ((i === area.x) && (j === area.y)) {
                 cont = true;
                 break;
               }
