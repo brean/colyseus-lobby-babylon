@@ -98,7 +98,6 @@ export class GameRoom extends Room {
     }
 
     for (const area of data.areas) {
-      console.log(area);
       if (area.type === 'hole') {
         continue
       }
