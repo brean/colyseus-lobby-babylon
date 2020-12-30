@@ -17,8 +17,8 @@ function getRandomColor () {
 // Rename to something-game
 export class GameRoom extends Room {
   firstUser: boolean = true
-  maxSpeed: number = .2
-  minSpeed: number = -.2
+  maxSpeed: number = 25
+  minSpeed: number = -25
 
   world: World = new World();
   bodies: Map<string, Body> = new Map<string, Body>();
@@ -146,40 +146,36 @@ export class GameRoom extends Room {
 
   onUpdate (deltaTime: number) {
     this.world.step(1.0/60, deltaTime, 3);
-    const speedMultiplier = 1.5;
     this.state.players.forEach((player, sessionId) => {
-      // TODO: player as RigidBody!
-
       let rotation = player.orientation
-      let speed = player.speed
+      let speed = player.speed * 15;
       let x = 0;
       let z = 0;
+      const playerBody = this.bodies.get(player.id);
       if (speed !== 0 && !isNaN(speed)) {
         x = Math.sin(rotation)
         z = Math.cos(rotation)
         // simple anti-cheat: min/max speed for velocities
         speed = Math.min(speed, this.maxSpeed);
         speed = Math.max(speed, this.minSpeed);
-
-        // TODO: add force instead of calculating x and y directly?
-        x *= player.speed * speedMultiplier;
-        z *= player.speed * speedMultiplier;
-        player.speed = speed  
-      }
-      let body = this.bodies.get(player.id);
-
-      if (body.position.y < -10) {
-        // reset, TODO: kill_count+=1
-        this.resetPlayerPhysics(body, player);
-        return
+        x *= speed;
+        z *= speed;
+        playerBody.velocity.x = x;  
+        playerBody.velocity.z = z;
       } else {
-        body.position.x += x 
-        body.position.z += z
+        playerBody.velocity.x = 0;
+        playerBody.velocity.z = 0;
       }
 
-      player.x = body.position.x
-      player.y = body.position.y
-      player.z = body.position.z
+      if (playerBody.position.y < -10) {
+        // reset, TODO: kill_count+=1
+        this.resetPlayerPhysics(playerBody, player);
+        return
+      }
+
+      player.x = playerBody.position.x
+      player.y = playerBody.position.y
+      player.z = playerBody.position.z
 
       player.rotation = rotation;
     });
@@ -195,13 +191,13 @@ export class GameRoom extends Room {
     });
 
     const radius = this.bodyRadius;
-    const sphereBody = new Body({
+    const playerBody = new Body({
        mass: 2, // kg
        shape: new Sphere(radius)
     });
-    this.resetPlayerPhysics(sphereBody, playerData)
-    this.bodies.set(playerData.id, sphereBody)
-    this.world.addBody(sphereBody);
+    this.resetPlayerPhysics(playerBody, playerData)
+    this.bodies.set(playerData.id, playerBody)
+    this.world.addBody(playerBody);
 
     // Note that all player in the game will be given the sessionId of each other.
     this.firstUser = false;
