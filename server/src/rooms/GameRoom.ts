@@ -69,7 +69,7 @@ export class GameRoom extends Room {
   }
 
   setupPhysics() {
-    this.world.gravity.set(0, 0, -9.82); // m/s²
+    this.world.gravity.set(0, -9.82, 0); // m/s²
     this.physicsFromMap('lobby')
   }
 
@@ -79,13 +79,13 @@ export class GameRoom extends Room {
     const size = data.default_size;
     const maxX = data.length / 2;
     const minX = -maxX;
-    const maxY = data.width / 2;
-    const minY = -maxY;
+    const maxZ = data.width / 2;
+    const minZ = -maxZ;
     for (let i = minX; i < maxX; i+=size) {
-      for (let j = minY; j < maxY; j+=size) {
+      for (let j = minZ; j < maxZ; j+=size) {
         let cont = false;
         for (const area of data.areas) {
-          if ((i === area.x) && (j === area.y)) {
+          if ((i === area.x) && (j === area.z)) {
             cont = true;
             break;
           }
@@ -101,18 +101,18 @@ export class GameRoom extends Room {
       if (area.type === 'hole') {
         continue
       }
-      this.addGroundPlate(area.x, area.y, area.size)
+      this.addGroundPlate(area.x, area.z, area.size)
     }
   }
 
-  addGroundPlate(x, y, size) {
+  addGroundPlate(x, z, size) {
     const groundBody = new Body({
       mass: 0 // mass === 0 makes the body static
     });
-    const groundShape = new Box(new Vec3(size/2,size/2,1));
+    const groundShape = new Box(new Vec3(size/2, 1, size/2));
     groundBody.position.x = x;
-    groundBody.position.y = y;
-    groundBody.position.z = -1;
+    groundBody.position.y = -1;
+    groundBody.position.z = z;
     groundBody.addShape(groundShape);
     this.world.addBody(groundBody);
   }
@@ -135,12 +135,12 @@ export class GameRoom extends Room {
     body.torque.setZero();
 
     body.position.x = Math.random();
-    body.position.y = Math.random();
-    body.position.z = this.bodyRadius;
+    body.position.y = this.bodyRadius;
+    body.position.z = Math.random();
 
     player.x = body.position.x;
-    player.z = body.position.y;
-    player.y = body.position.z;
+    player.y = body.position.y;
+    player.z = body.position.z;
     player.speed = 0;
   }
 
@@ -168,18 +168,18 @@ export class GameRoom extends Room {
       }
       let body = this.bodies.get(player.id);
 
-      if (body.position.z < -10) {
+      if (body.position.y < -10) {
         // reset, TODO: kill_count+=1
         this.resetPlayerPhysics(body, player);
         return
       } else {
         body.position.x += x 
-        body.position.y += z
+        body.position.z += z
       }
 
       player.x = body.position.x
-      player.z = body.position.y
-      player.y = body.position.z
+      player.y = body.position.y
+      player.z = body.position.z
 
       player.rotation = rotation;
     });

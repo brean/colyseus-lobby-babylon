@@ -45,9 +45,9 @@ export default class LevelLoader {
             '', `/${this.basePathObj}/`, 
             `tile${areaSize}_${area.name}.obj`, this.scene, (meshes) => {
               for (const mesh of meshes) {
-                mesh.position.y = -1;
                 mesh.position.x = area.x;
-                mesh.position.z = area.y;
+                mesh.position.y = -1;
+                mesh.position.z = area.z;
                 mesh.receiveShadows = true;
               }
             }
@@ -64,8 +64,8 @@ export default class LevelLoader {
     const size = this.data.default_size;
     const maxX = this.data.length / 2;
     const minX = -maxX;
-    const maxY = this.data.width / 2;
-    const minY = -maxY;
+    const maxZ = this.data.width / 2;
+    const minZ = -maxZ;
     const timeName = this.tileNamesBySize.get(size);
     BABYLON.SceneLoader.ImportMesh(
       '', `/${this.basePathObj}/`, 
@@ -74,10 +74,10 @@ export default class LevelLoader {
           mesh.position.y = -1;
         }
         for (let i = minX; i < maxX; i+=size) {
-          for (let j = minY; j < maxY; j+=size) {
+          for (let j = minZ; j < maxZ; j+=size) {
             let cont = false;
             for (const area of this.data.areas) {
-              if ((i === area.x) && (j === area.y)) {
+              if ((i === area.x) && (j === area.z)) {
                 cont = true;
                 break;
               }
