@@ -7,24 +7,48 @@
     "default_size": 6,
     "areas": [
         {
-            "x": -12,
-            "z": -6,
+            "pos": [-12, 0, -6],
             "size": 6,
             "name": "teamRed",
             "type": "change_character"
         },
         {
-            "x": -12,
-            "z": 6,
+            "pos": [-12, 0, 6],
             "size": 6,
             "name": "teamBlue",
             "type": "change_color"
         },
         {
-            "x": 6,
-            "z": 6,
+            "pos": [6, 0, 6],
             "size": 6,
             "type": "hole"
+        }
+    ],
+    "objects": [
+        {
+            "name": "wardrobe",
+            "pos": [-12, 0, -6],
+            "rot": [0, 1.5707, 0],
+            "receiveShadows": false
+        },
+        {
+            "name": "mirror",
+            "pos": [-12, 0, 7],
+            "rot": [0.0, -1.5707, 0.0],
+            "receiveShadows": false
+        },
+        {
+            "name": "table_brush",
+            "pos": [-12, 0, 5],
+            "rot": [0, -0.2, 0],
+            "receiveShadows": false
+        },
+        {
+            "type": "mirror",
+            "width": 1.2,
+            "height": 2.6,
+            "pos": [-12, 1.4, 7],
+            "rot": [0.0, -1.5707, 0.0]
         }
     ]
 }

@@ -3,6 +3,7 @@ import * as BABYLON from 'babylonjs'
 import { Room } from 'colyseus.js'
 import { Player } from '../model/Player'
 import LevelLoader from './LevelLoader'
+import MirrorStorage from './MirrorStorage'
 import PlayerControls from './PlayerControls'
 
 export default class Game {
@@ -19,6 +20,7 @@ export default class Game {
   lightPosition: BABYLON.Vector3 = new BABYLON.Vector3(12, 12, 12)
   controls: PlayerControls
   loader: LevelLoader;
+  mirror: MirrorStorage;
   shadowGenerator?: BABYLON.ShadowGenerator;
 
   constructor (room: Room, level = 'lobby') {
@@ -34,7 +36,8 @@ export default class Game {
       });
     this.scene = new BABYLON.Scene(this.engine)
     this.createLight();
-    this.loader = new LevelLoader(this.scene, level, this.shadowGenerator);
+    this.mirror = new MirrorStorage(this.scene);
+    this.loader = new LevelLoader(this.mirror, this.scene, level, this.shadowGenerator);
     this.camera = this.createCamera();
     this.controls = new PlayerControls(this);
     this.run();
@@ -44,7 +47,6 @@ export default class Game {
       this.resize();
     });
   }
-
 
   setPlayerId(playerId: string) {
     this.playerId = playerId
@@ -61,6 +63,7 @@ export default class Game {
     this.light.position = new BABYLON.Vector3(12, 12, 12);
     this.light.intensity = 0.3;
 
+    // TODO: create multiple lights an compile them (?)
     this.shadowGenerator = new BABYLON.ShadowGenerator(256, this.light);
     this.shadowGenerator.useExponentialShadowMap = false;
   }
@@ -87,6 +90,10 @@ export default class Game {
     this.engine.resize();
   }
 
+  getPlayerMesh():BABYLON.AbstractMesh[] | undefined {
+    return this.playerMeshes.get(this.playerId);
+  }
+
   // PLAYER
   /**
    * add the player to the scene
@@ -111,6 +118,7 @@ export default class Game {
         }
         for (const mesh of meshes) {
           this.shadowGenerator?.addShadowCaster(mesh, true)
+          this.mirror.renderTarget.push(mesh)
         }
         this.updatePlayer(player);
       }
@@ -130,6 +138,7 @@ export default class Game {
         }
         for (const mesh of meshes) {
           this.shadowGenerator?.addShadowCaster(mesh, true)
+          this.mirror.renderTarget.push(mesh)
         }
         this.updatePlayer(player);
       }
@@ -138,7 +147,8 @@ export default class Game {
 
   updatePlayer(player: Player) {
     const meshes = this.updatePlayerMesh(player)
-    if (meshes && this.camera && player.id === this.playerId) {
+    if (meshes && this.camera && player.id == this.playerId) {
+      // move camera if the player is the current player
       const basePos = meshes[0].position;
       const camera = this.camera
       camera.position.x = basePos.x + this.cameraPosition.x
@@ -160,6 +170,7 @@ export default class Game {
     for (const mesh of meshes) {
       mesh.position.set(player.x, player.y, player.z)
       if (player.rotation !== undefined) {
+        
         mesh.rotation.set(0, player.rotation, 0)
       }
     }

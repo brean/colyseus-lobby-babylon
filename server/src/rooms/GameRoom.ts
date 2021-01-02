@@ -41,7 +41,7 @@ export class GameRoom extends Room {
       // handle player message
       const p = state.players[client.sessionId]
       p.color = player.color;
-      p.name = player.name
+      p.name = player.name;
     });
     this.onMessage('set_mode', (client, mode) => {
       // handle player message
@@ -85,7 +85,7 @@ export class GameRoom extends Room {
       for (let j = minZ; j < maxZ; j+=size) {
         let cont = false;
         for (const area of data.areas) {
-          if ((i === area.x) && (j === area.z)) {
+          if ((i === area.pos[0]) && (j === area.pos[2])) {
             cont = true;
             break;
           }
@@ -93,7 +93,7 @@ export class GameRoom extends Room {
         if (cont) {
           continue;
         }
-        this.addGroundPlate(i, j, size)
+        this.addGroundPlate([i, 0, j], data.height, size)
       }
     }
 
@@ -101,18 +101,19 @@ export class GameRoom extends Room {
       if (area.type === 'hole') {
         continue
       }
-      this.addGroundPlate(area.x, area.z, area.size)
+      this.addGroundPlate(area.pos, data.height, area.size)
     }
   }
 
-  addGroundPlate(x, z, size) {
+  addGroundPlate(pos: number[], height, size) {
     const groundBody = new Body({
       mass: 0 // mass === 0 makes the body static
     });
     const groundShape = new Box(new Vec3(size/2, 1, size/2));
-    groundBody.position.x = x;
-    groundBody.position.y = -1;
-    groundBody.position.z = z;
+    groundBody.position.x = pos[0];
+    // the default tile height is 1, so if we want the player to be at y-position 0 we need to lower the map by 1
+    groundBody.position.y = pos[1] - height;
+    groundBody.position.z = pos[2];
     groundBody.addShape(groundShape);
     this.world.addBody(groundBody);
   }
@@ -169,6 +170,7 @@ export class GameRoom extends Room {
 
       if (playerBody.position.y < -10) {
         // reset, TODO: kill_count+=1
+        console.log(`player ${player.id} just died from falling, respawn`)
         this.resetPlayerPhysics(playerBody, player);
         return
       }
@@ -176,7 +178,6 @@ export class GameRoom extends Room {
       player.x = playerBody.position.x
       player.y = playerBody.position.y
       player.z = playerBody.position.z
-
       player.rotation = rotation;
     });
   }
@@ -201,7 +202,7 @@ export class GameRoom extends Room {
 
     // Note that all player in the game will be given the sessionId of each other.
     this.firstUser = false;
-    this.state.players[client.sessionId] = playerData
+    this.state.players[playerData.id] = playerData
   }
 
   // When a client leaves the room
