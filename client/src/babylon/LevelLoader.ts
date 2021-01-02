@@ -4,6 +4,8 @@ import MirrorStorage from './MirrorStorage'
 
 // Level parent
 export default class LevelLoader {
+  debugCollider: boolean = false;
+  
   name: string;
   mirror: MirrorStorage;
   basePathMapfile: string = 'maps';
@@ -31,6 +33,10 @@ export default class LevelLoader {
     this.load();
   }
 
+  setMaterialColor(material: BABYLON.StandardMaterial, color: string) {
+    material.diffuseColor = BABYLON.Color3.FromHexString(color)
+  }
+
   load() {
     // load base map from AJAX
     const xhttp = new XMLHttpRequest();
@@ -50,14 +56,14 @@ export default class LevelLoader {
 
   applyPositionRotation(mesh: BABYLON.AbstractMesh, position: number[], rotation?: number[]) {
     if (position) {
-      mesh.position.x = position[0];
-      mesh.position.y = position[1];
-      mesh.position.z = position[2];
+      mesh.position.x += position[0];
+      mesh.position.y += position[1];
+      mesh.position.z += position[2];
     }
     if (rotation) {
-      mesh.rotation.x = rotation[0];
-      mesh.rotation.y = rotation[1];
-      mesh.rotation.z = rotation[2];
+      mesh.rotation.x += rotation[0];
+      mesh.rotation.y += rotation[1];
+      mesh.rotation.z += rotation[2];
     }
   }
 
@@ -70,6 +76,10 @@ export default class LevelLoader {
       BABYLON.SceneLoader.ImportMesh(
         '', `/${this.basePathObj}/`, 
         `tile${areaSize}_${area.name}.obj`, this.scene, (meshes) => {
+          if (area.color) {
+            this.setMaterialColor(
+              meshes[0].material as BABYLON.StandardMaterial, area.color)
+          }
           for (const mesh of meshes) {
             this.applyPositionRotation(mesh, area.pos)
             mesh.position.y -= this.data.height;
@@ -77,6 +87,24 @@ export default class LevelLoader {
           }
         }
       );
+    }
+  }
+
+  createCollider(obj: any) {
+    // show collider for debug
+    const dim = obj.collider.dim
+    let mesh
+    switch (obj.collider.type) {
+      case 'cube':
+        const options = {width: dim[0], height: dim[1], depth: dim[2]}
+        mesh = BABYLON.MeshBuilder.CreateBox("box", options, this.scene);
+        break;
+    }
+    if (mesh) {
+      this.applyPositionRotation(mesh, obj.pos, obj.rot)
+      this.applyPositionRotation(mesh, obj.collider.pos, obj.collider.rot)
+      mesh.material = new BABYLON.StandardMaterial('transparent', this.scene);
+      mesh.material.alpha = 0.5
     }
   }
 
@@ -97,6 +125,9 @@ export default class LevelLoader {
             }
           }
         );
+        if (obj.collider && this.debugCollider) {
+          this.createCollider(obj);
+        }
       }
     }
   }
@@ -113,6 +144,8 @@ export default class LevelLoader {
       `tile${timeName}_${this.data.default_type}.obj`, this.scene, (meshes) => {
         for (const mesh of meshes) {
           mesh.position.y = -this.data.height;
+          this.setMaterialColor(
+            meshes[0].material as BABYLON.StandardMaterial, this.data.default_color)
         }
         for (let i = minX; i < maxX; i+=size) {
           for (let j = minZ; j < maxZ; j+=size) {

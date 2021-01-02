@@ -22,7 +22,7 @@ export class GameRoom extends Room {
 
   world: World = new World();
   bodies: Map<string, Body> = new Map<string, Body>();
-  bodyRadius: number = 0.3;
+  bodyRadius: number = 0.6;
 
   maps: Map<string, any> = new Map<string, any>();
 
@@ -103,6 +103,13 @@ export class GameRoom extends Room {
       }
       this.addGroundPlate(area.pos, data.height, area.size)
     }
+
+    for (const obj of data.objects) {
+      if (!obj.collider) {
+        continue
+      }
+      this.addCollider(obj)
+    }
   }
 
   addGroundPlate(pos: number[], height, size) {
@@ -116,6 +123,42 @@ export class GameRoom extends Room {
     groundBody.position.z = pos[2];
     groundBody.addShape(groundShape);
     this.world.addBody(groundBody);
+  }
+
+  applyPositionRotation(body, pos, rot) {
+    if (pos) {
+      body.position.x += pos[0]
+      body.position.y += pos[1]
+      body.position.z += pos[2]
+    }
+    if (rot) {
+      let vec: Vec3 = new Vec3()
+      body.quaternion.toEuler(vec)
+      vec.x += rot[0]
+      vec.y += rot[1]
+      vec.z += rot[2]
+      console.log(vec)
+      body.quaternion.setFromEuler(vec.x, vec.y, vec.z)
+    }
+  }
+
+  addCollider(obj) {
+    let collider = new Body({
+      mass: 0 // mass === 0 makes the body static
+    });
+    const dim = obj.collider.dim
+    let colliderShape
+    switch (obj.collider.type) {
+      default:
+      case 'cube':
+        colliderShape = new Box(new Vec3(dim[0]/2, dim[1]/2, dim[2]/2));
+    }
+    if (colliderShape) {
+      this.applyPositionRotation(collider, obj.pos, obj.rot)
+      this.applyPositionRotation(collider, obj.collider.pos, obj.collider.rot)
+      collider.addShape(colliderShape);
+      this.world.addBody(collider);
+    }
   }
 
   resetPlayerPhysics(body: Body, player: Player) {

@@ -22,6 +22,7 @@ export default class Game {
   loader: LevelLoader;
   mirror: MirrorStorage;
   shadowGenerator?: BABYLON.ShadowGenerator;
+  bodyRadius: number = 0.6;
 
   constructor (room: Room, level = 'lobby') {
     this.room = room;
@@ -35,6 +36,7 @@ export default class Game {
         stencil: true
       });
     this.scene = new BABYLON.Scene(this.engine)
+    this.scene.clearColor = new BABYLON.Color4(0.0, 0.0, 0.0, 1.0);
     this.createLight();
     this.mirror = new MirrorStorage(this.scene);
     this.loader = new LevelLoader(this.mirror, this.scene, level, this.shadowGenerator);
@@ -164,7 +166,7 @@ export default class Game {
       return
     }
     for (const mesh of meshes) {
-      mesh.position.set(player.x, player.y, player.z)
+      mesh.position.set(player.x, player.y - this.bodyRadius, player.z)
       if (player.rotation !== undefined) {
         
         mesh.rotation.set(0, player.rotation, 0)

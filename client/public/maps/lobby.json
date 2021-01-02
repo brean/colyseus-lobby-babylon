@@ -4,18 +4,21 @@
     "height": 1,
     "description": "the lobby level",
     "default_type": "neutral",
+    "default_color": "#aabbaa",
     "default_size": 6,
     "areas": [
         {
             "pos": [-12, 0, -6],
             "size": 6,
-            "name": "teamRed",
+            "name": "neutral",
+            "color": "#aa6666",
             "type": "change_character"
         },
         {
             "pos": [-12, 0, 6],
             "size": 6,
-            "name": "teamBlue",
+            "name": "neutral",
+            "color": "#6666aa",
             "type": "change_color"
         },
         {
@@ -24,24 +27,41 @@
             "type": "hole"
         }
     ],
+    "obstacles": [
+    ],
     "objects": [
         {
             "name": "wardrobe",
             "pos": [-12, 0, -6],
             "rot": [0, 1.5707, 0],
-            "receiveShadows": false
+            "receiveShadows": false,
+            "collider": {
+                "type": "cube",
+                "dim": [2.6, 3.4, 1.5],
+                "pos": [0, 1.7, 0]
+            }
         },
         {
             "name": "mirror",
             "pos": [-12, 0, 7],
             "rot": [0.0, -1.5707, 0.0],
-            "receiveShadows": false
+            "receiveShadows": false,
+            "collider": {
+                "type": "cube",
+                "dim": [1.6, 3, 0.3],
+                "pos": [0, 1.5, 0]
+            }
         },
         {
             "name": "table_brush",
             "pos": [-12, 0, 5],
             "rot": [0, -0.2, 0],
-            "receiveShadows": false
+            "receiveShadows": false,
+            "collider": {
+                "type": "cube",
+                "dim": [1.1, 0.8, 1.1],
+                "pos": [0, 0.4, 0]
+            }
         },
         {
             "type": "mirror",
