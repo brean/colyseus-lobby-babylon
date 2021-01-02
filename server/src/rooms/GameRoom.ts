@@ -135,9 +135,9 @@ export class GameRoom extends Room {
     body.force.setZero();
     body.torque.setZero();
 
-    body.position.x = Math.random();
+    body.position.x = Math.random() * 6 - 3;
     body.position.y = this.bodyRadius;
-    body.position.z = Math.random();
+    body.position.z = Math.random() * 6 - 3;
 
     player.x = body.position.x;
     player.y = body.position.y;

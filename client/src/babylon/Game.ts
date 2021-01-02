@@ -147,17 +147,13 @@ export default class Game {
 
   updatePlayer(player: Player) {
     const meshes = this.updatePlayerMesh(player)
-    if (meshes && this.camera && player.id == this.playerId) {
+    if (meshes && this.camera && player.id === this.playerId) {
       // move camera if the player is the current player
       const basePos = meshes[0].position;
       const camera = this.camera
-      camera.position.x = basePos.x + this.cameraPosition.x
-      camera.position.y = basePos.y + this.cameraPosition.y
-      camera.position.z = basePos.z + this.cameraPosition.z
+      camera.position = basePos.add(this.cameraPosition)
       if (this.light) {
-        this.light.position.x = basePos.x + this.lightPosition.x
-        this.light.position.y = basePos.y + this.lightPosition.y
-        this.light.position.z = basePos.z + this.lightPosition.z 
+        this.light.position = basePos.add(this.lightPosition)
       }
     }
   }

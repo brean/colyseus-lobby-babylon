@@ -57,7 +57,7 @@ export default class VirtualJoystick {
     const thumbHeight = (this.thumbContainer._currentMeasure.height*.5)
     let floatLeft;
     if (this.left) {
-      floatLeft = coordinates.x-thumbOffset;
+      floatLeft = coordinates.x - thumbOffset;
     } else {
       floatLeft = -this.canvas.width - coordinates.x - thumbOffset
     }
