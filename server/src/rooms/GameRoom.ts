@@ -23,6 +23,7 @@ export class GameRoom extends Room {
   private firstUser: boolean = true
   private maxSpeed: number = 25
   private minSpeed: number = -25
+  private lastjump: boolean = false
 
   private world: World = new World();
   private bodies: Map<string, Body> = new Map<string, Body>();
@@ -58,6 +59,7 @@ export class GameRoom extends Room {
       const player: Player = state.players[client.sessionId];
       player.speed = message.speed;
       player.orientation = message.orientation;
+      player.jump = message.jump;
     });
     this.onMessage('set_map', (client, map) => {
       // handle player message
@@ -187,6 +189,8 @@ export class GameRoom extends Room {
     player.y = body.position.y;
     player.z = body.position.z;
     player.speed = 0;
+    player.jump = false;
+    this.lastjump = false;
   }
 
   onUpdate (deltaTime: number) {
@@ -210,6 +214,11 @@ export class GameRoom extends Room {
       } else {
         playerBody.velocity.x = 0;
         playerBody.velocity.z = 0;
+      }
+      if (player.jump && !this.lastjump) {
+        console.log("JUMP!")
+        playerBody.velocity.y = 2;
+        //this.lastjump = true;
       }
 
       if (playerBody.position.y < -10) {

@@ -45,7 +45,10 @@ export default class Game {
     this.applyStyles();
 
     this.mirror = new MirrorStorage(this.scene);
-    this.levelLoader = new LevelLoader(this.assets, this.mirror, this.scene, level);
+    this.createLight();
+    this.levelLoader = new LevelLoader(
+      this.assets, this.mirror, this.scene, level, 
+      this.shadowGenerator);
     this.assets.on('assets_loaded', () => {
       this.levelLoader.onAssetsLoaded()
       for (const player of this.players.values()) {
@@ -59,7 +62,7 @@ export default class Game {
       this.assets.preloadAssets();
     })
 
-    this.createLight();
+    
     this.camera = this.createCamera();
     this.controls = new InputControls(
       this.room, this.engine, this.scene, this.canvas);
@@ -125,7 +128,7 @@ export default class Game {
     this.light.intensity = 0.3;
 
     // TODO: create multiple lights an compile them (?)
-    this.shadowGenerator = new BABYLON.ShadowGenerator(256, this.light);
+    this.shadowGenerator = new BABYLON.ShadowGenerator(1024, this.light);
     this.shadowGenerator.useExponentialShadowMap = false;
   }
 

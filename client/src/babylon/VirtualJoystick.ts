@@ -1,22 +1,23 @@
 import * as GUI from "babylonjs-gui";
+import UIManager from './UIManager'
 
 // based on https://playground.babylonjs.com/#C6V6UY#5
 export default class VirtualJoystick {
+  private ui:UIManager
   private puckDown: boolean;
   private left: boolean;
-  private canvas: HTMLCanvasElement;
   private thumbContainer: GUI.Ellipse;
   private innerThumbContainer: GUI.Ellipse;
   private puck: GUI.Ellipse;
-  private sideJoystickOffset = -50;
-  private bottomJoystickOffset = -30;
+  private sideOffset = -50;
+  private bottomOffset = -30;
   private horizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT
 
   public posX: number = 0;
   public posY: number = 0;
 
-  constructor(canvas: HTMLCanvasElement, color: string = "blue", left: boolean = true) {
-    this.canvas = canvas;
+  constructor(ui: UIManager, color: string = "blue", left: boolean = true) {
+    this.ui = ui;
     this.puckDown = false;
     this.left = left;
 
@@ -25,11 +26,11 @@ export default class VirtualJoystick {
     );
     this.thumbContainer.alpha = 0.4;
     if (left) {
-      this.sideJoystickOffset *= -1
+      this.sideOffset *= -1
       this.horizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT
     }
-    this.thumbContainer.left = this.sideJoystickOffset;
-    this.thumbContainer.top = this.bottomJoystickOffset;
+    this.thumbContainer.left = this.sideOffset;
+    this.thumbContainer.top = this.bottomOffset;
     this.thumbContainer.horizontalAlignment = this.horizontalAlignment;
     this.thumbContainer.verticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_BOTTOM;
 
@@ -40,7 +41,10 @@ export default class VirtualJoystick {
     this.puck = this.makeThumbArea(
       "puck", 0, color, color, 50
     )
-    this.createAdvancedDynamicTexture();
+    this.ui.addControl(this.thumbContainer);
+    this.thumbContainer.addControl(this.innerThumbContainer);
+    this.thumbContainer.addControl(this.puck);
+
     this.puck.isVisible = false;
     this.createPuckControl();
   }
@@ -54,16 +58,16 @@ export default class VirtualJoystick {
   private onPuckDown(coordinates: any) {
     this.puck.isVisible = true;
     const thumbWidth = (this.thumbContainer._currentMeasure.width*.5)
-    const thumbOffset = thumbWidth+Math.abs(this.sideJoystickOffset)
+    const thumbOffset = thumbWidth+Math.abs(this.sideOffset)
     const thumbHeight = (this.thumbContainer._currentMeasure.height*.5)
     let floatLeft;
     if (this.left) {
       floatLeft = coordinates.x - thumbOffset;
     } else {
-      floatLeft = -this.canvas.width - coordinates.x - thumbOffset
+      floatLeft = -this.ui.canvas.width - coordinates.x - thumbOffset
     }
     this.puck.left = floatLeft;
-    this.puck.top = -(this.canvas.height - coordinates.y - thumbHeight + this.bottomJoystickOffset);
+    this.puck.top = -(this.ui.canvas.height - coordinates.y - thumbHeight + this.bottomOffset);
     this.puckDown = true;
     this.thumbContainer.alpha = 0.9;
   }
@@ -79,42 +83,24 @@ export default class VirtualJoystick {
   private onPuckMove(coordinates: any) {
     if (this.puckDown) {
       const thumbWidth = this.thumbContainer._currentMeasure.width*.5
-      const thumbOffset = thumbWidth+Math.abs(this.sideJoystickOffset)
+      const thumbOffset = thumbWidth+Math.abs(this.sideOffset)
       if (this.left) {
         this.posX = coordinates.x - thumbOffset;
       } else {
-        this.posX = -(this.canvas.width - coordinates.x-thumbOffset)
+        this.posX = -(this.ui.canvas.width - coordinates.x-thumbOffset)
       }
-      this.posY = this.canvas.height - coordinates.y-thumbWidth+this.bottomJoystickOffset;
+      this.posY = this.ui.canvas.height - coordinates.y-thumbWidth+this.bottomOffset;
       this.puck.left = this.posX;
       this.puck.top = -this.posY;
     }
   }
 
-  private createAdvancedDynamicTexture() {
-    const adt = GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
-    adt.addControl(this.thumbContainer);
-    this.thumbContainer.addControl(this.innerThumbContainer);
-    this.thumbContainer.addControl(this.puck);
-  }
-
   private makeThumbArea(
       name: string, thickness: number, color: string, 
       background: string, radius: number){
-    let rect = new GUI.Ellipse();
-    rect.name = this.left ? `left${name}` : `right${name}`;
-    rect.thickness = thickness;
-    rect.color = color;
-    rect.background = background;
-    rect.paddingLeft = "0px";
-    rect.paddingRight = "0px";
-    rect.paddingTop = "0px";
-    rect.paddingBottom = "0px";
-    rect.height = `${radius}px`;
-    rect.width = `${radius}px`;
-    rect.isPointerBlocker = true;
-    rect.horizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
-    rect.verticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_CENTER;
-    return rect;
+    return this.ui.makeCircle(
+      this.left ? `left${name}` : `right${name}`,
+      thickness, color, background, radius
+    );
   }
 }

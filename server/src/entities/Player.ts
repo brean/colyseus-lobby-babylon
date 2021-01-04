@@ -14,4 +14,5 @@ export class Player extends Schema {
   // velocity
   orientation: number = 0.0;
   speed: number = 0.0;
+  jump: boolean = false;
 }

@@ -15,6 +15,7 @@ export default class LevelLoader extends EventEmitter {
   private basePathMapfile: string = 'maps';
   private basePathObj: string = 'obj';
   private assets:AssetLoader;
+  private shadowGenerator?: BABYLON.ShadowGenerator;
   private tileNamesBySize: Map<number, string> = new Map<number, string>([
     [6, 'Large'],
     [1, 'Small'],
@@ -24,8 +25,9 @@ export default class LevelLoader extends EventEmitter {
   private data: any;
   private scene: BABYLON.Scene;
 
-  constructor(assets:AssetLoader, mirror: MirrorStorage, scene: BABYLON.Scene, name: string) {
+  constructor(assets:AssetLoader, mirror: MirrorStorage, scene: BABYLON.Scene, name: string, shadowGenerator?:BABYLON.ShadowGenerator) {
     super();
+    this.shadowGenerator = shadowGenerator;
     this.assets = assets;
     this.mirror = mirror;
     this.name = name;
@@ -182,6 +184,7 @@ export default class LevelLoader extends EventEmitter {
           for (const mesh of meshes) {
             this.applyPositionRotation(mesh, obj.pos, obj.rot);
             mesh.receiveShadows = obj.receiveShadows;
+            this.shadowGenerator?.addShadowCaster(mesh, true)
           }
         }
         if (obj.collider && this.debugCollider) {

@@ -2,6 +2,8 @@ import * as BABYLON from 'babylonjs'
 import { Room } from 'colyseus.js'
 import VirtualJoystick from './VirtualJoystick'
 import { GamepadManager } from 'babylonjs'
+import UIManager from './UIManager'
+import VirtualButton from './VirtualButton'
 
 // System dependend Controls: Keyboard or (Virtual) Joystick controls
 
@@ -14,7 +16,8 @@ export default class InputControls {
   
   // Mobile controls
   private sticks: boolean = false
-  private leftStick: VirtualJoystick|undefined = undefined
+  private leftStick?: VirtualJoystick
+  private jumpButton?: VirtualButton
   
   // Keyboard controls
   private keyboard: boolean = false
@@ -22,11 +25,12 @@ export default class InputControls {
 
   // GamePad controls
   private gamepadManager: GamepadManager
-  private gamepadInput = {x: 0.0, y: 0.0}
+  private gamepadInput = {x: 0.0, y: 0.0, jump: false}
   private gamepadActive = false;
 
   private orientation: number = 0.0
   private speed: number = 0.0
+  private jump: boolean = false;
 
   constructor (
       room:Room, engine:BABYLON.Engine, 
@@ -40,7 +44,7 @@ export default class InputControls {
 
     this.initGamepad();
     if (this.isMobile()) {
-      this.initVirtualJoystick();
+      this.initMobileControls();
     } else {
       this.initKeyboard();
       this.initMouse();
@@ -96,6 +100,54 @@ export default class InputControls {
         this.gamepadInput.x = x;
         this.gamepadInput.y = y;
       });
+      // TODO: button down this.gamepadInput.jump = false;
+      if (gamepad instanceof BABYLON.Xbox360Pad) {
+        console.log('Xbox 360 Pad')
+        gamepad.onButtonDownObservable.add((button, state)=>{
+          if (button === BABYLON.Xbox360Button.A) {
+            this.gamepadInput.jump = true
+          }
+        })
+        gamepad.onButtonUpObservable.add((button, state)=>{
+          if (button === BABYLON.Xbox360Button.A) {
+            this.gamepadInput.jump = false
+          }
+        })
+      } else if (gamepad instanceof BABYLON.DualShockPad) {
+        console.log('DualShock Pad')
+        gamepad.onButtonDownObservable.add((button, state)=>{
+          if (button === BABYLON.DualShockButton.Cross) {
+            this.gamepadInput.jump = true
+          }
+        })
+        gamepad.onButtonUpObservable.add((button, state)=>{
+          if (button === BABYLON.DualShockButton.Cross) {
+            this.gamepadInput.jump = false
+          }
+        })
+      } else if (gamepad instanceof BABYLON.GenericPad) {
+        console.log('Generic Pad')
+        gamepad.onButtonDownObservable.add((button, state)=>{
+          if (button === 0) {
+            this.gamepadInput.jump = true
+          }
+        })
+        gamepad.onButtonUpObservable.add((button, state)=>{
+          if (button === 0) {
+            this.gamepadInput.jump = false
+          }
+        })
+      } else if (gamepad instanceof BABYLON.GenericController) {
+        console.log('Generic Controller')
+        gamepad.onButtonStateChange((controller, button, state) => {
+          if (button === 0) {
+            this.gamepadInput.jump = state.pressed;
+          }
+        })
+      } else {
+        console.log('unknown controller! can not jump!')
+      }
+
     });
     this.gamepadManager.onGamepadDisconnectedObservable.add((gamepad, state)=>{
       this.gamepadActive = false;
@@ -103,14 +155,17 @@ export default class InputControls {
   }
 
   // Mobile Phone/Pad
-  private initVirtualJoystick () {
-    this.leftStick = new VirtualJoystick(this.canvas);
+  private initMobileControls () {
+    const ui:UIManager = new UIManager(this.canvas)
+    this.leftStick = new VirtualJoystick(ui);
+    this.jumpButton = new VirtualButton(ui, 'blue', false);
     this.sticks = true;
   }
 
   private updateInputs() {
     this.speed = 0.0
     const speedMultiplier = 0.2
+    this.jump = false;
     let input:boolean = false
     // keyboard control
     if (this.keyboard) {
@@ -121,22 +176,29 @@ export default class InputControls {
         input = true
         this.speed = -speedMultiplier
       }
+      if (this.inputMap.get(' ')) {
+        input = true
+        this.jump = true
+      }
     }
     // virtual joystick control
     if (this.leftStick && !input) {
+      this.jump = this.jumpButton?.pressed || false
       this.calcSpeedAndOrientation(
         this.leftStick.posX/40,
         this.leftStick.posY/40);
     }
     // game pad
     if (this.gamepadActive && !input) {
+      this.jump = this.gamepadInput.jump;
       this.calcSpeedAndOrientation(
         this.gamepadInput.x,
         -this.gamepadInput.y);
     }
     const movement = {
       speed: this.speed, 
-      orientation: this.orientation
+      orientation: this.orientation,
+      jump: this.jump
     }
     if (this.room) {
       this.room.send('move', movement);
