@@ -1,39 +1,40 @@
 import * as BABYLON from 'babylonjs'
 import { Room } from 'colyseus.js'
 import VirtualJoystick from './VirtualJoystick'
-import Game from './Game'
 import { GamepadManager } from 'babylonjs'
 
 // System dependend Controls: Keyboard or (Virtual) Joystick controls
 
-export default class PlayerControls {
-  room: Room
+export default class InputControls {
+  private room: Room
   
-  engine: BABYLON.Engine
-  scene: BABYLON.Scene
-  canvas: HTMLCanvasElement
+  private engine: BABYLON.Engine
+  private scene: BABYLON.Scene
+  private canvas: HTMLCanvasElement
   
   // Mobile controls
-  sticks: boolean = false
-  leftStick: VirtualJoystick|undefined = undefined
+  private sticks: boolean = false
+  private leftStick: VirtualJoystick|undefined = undefined
   
   // Keyboard controls
-  keyboard: boolean = false
-  inputMap: Map<string, boolean> = new Map<string, boolean>()
+  private keyboard: boolean = false
+  private inputMap: Map<string, boolean> = new Map<string, boolean>()
 
   // GamePad controls
-  gamepadManager: GamepadManager
-  gamepadInput = {x: 0.0, y: 0.0}
-  gamepadActive = false;
+  private gamepadManager: GamepadManager
+  private gamepadInput = {x: 0.0, y: 0.0}
+  private gamepadActive = false;
 
-  orientation: number = 0.0
-  speed: number = 0.0
+  private orientation: number = 0.0
+  private speed: number = 0.0
 
-  constructor (game: Game) {
-    this.scene = game.scene;
-    this.canvas = game.canvas;
-    this.engine = game.engine;
-    this.room = game.room;
+  constructor (
+      room:Room, engine:BABYLON.Engine, 
+      scene:BABYLON.Scene, canvas: HTMLCanvasElement) {
+    this.scene = scene;
+    this.canvas = canvas;
+    this.engine = engine;
+    this.room = room;
     
     this.gamepadManager = new GamepadManager();
 
@@ -65,13 +66,13 @@ export default class PlayerControls {
   }
 
   // PC mouse & keyboard
-  initMouse() {
+  private initMouse() {
     this.scene.onPointerObservable.add(
       this.onPointerMove.bind(this),
       BABYLON.PointerEventTypes.POINTERMOVE);
   }
 
-  onPointerMove() {
+  private onPointerMove() {
     const x = this.scene.pointerX;
     const y = this.scene.pointerY;
     const width = this.engine.getRenderWidth();
@@ -82,7 +83,7 @@ export default class PlayerControls {
     this.orientation = Math.atan2(mouseVec.y, mouseVec.x);
   }
 
-  initGamepad() {
+  private initGamepad() {
     this.gamepadManager.onGamepadConnectedObservable.add((gamepad, state)=>{
       this.gamepadActive = true;
       gamepad.onleftstickchanged((values)=>{
@@ -102,12 +103,12 @@ export default class PlayerControls {
   }
 
   // Mobile Phone/Pad
-  initVirtualJoystick () {
+  private initVirtualJoystick () {
     this.leftStick = new VirtualJoystick(this.canvas);
     this.sticks = true;
   }
 
-  updateInputs() {
+  private updateInputs() {
     this.speed = 0.0
     const speedMultiplier = 0.2
     let input:boolean = false
@@ -142,7 +143,7 @@ export default class PlayerControls {
     }
   }
 
-  calcSpeedAndOrientation(x: number, y: number, speedMultiplier = 0.2) {
+  private calcSpeedAndOrientation(x: number, y: number, speedMultiplier = 0.2) {
     let speed = 0.0
     if (Math.abs(x) > 0 && Math.abs(y) > 0) {
       speed = Math.sqrt(
@@ -157,7 +158,7 @@ export default class PlayerControls {
     }
   }
 
-  isMobile () {
+  private isMobile () {
     return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
   }
 }

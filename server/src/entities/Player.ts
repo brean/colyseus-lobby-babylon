@@ -4,6 +4,7 @@ export class Player extends Schema {
   @type("string") id: string = '';
   @type("string") name: string = 'new Player';
   @type("string") color: string = '#ff0000';
+  @type("string") character: string = 'dog';
   @type("boolean") admin: boolean = false;
   // Pose
   @type("number") x: number = 0;
@@ -11,6 +12,6 @@ export class Player extends Schema {
   @type("number") z: number = 0;
   @type("number") rotation: number = 0;
   // velocity
-  @type("number") orientation: number = 0.0;
-  @type("number") speed: number = 0.0;
+  orientation: number = 0.0;
+  speed: number = 0.0;
 }

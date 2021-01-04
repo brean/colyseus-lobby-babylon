@@ -2,20 +2,20 @@
 import * as BABYLON from 'babylonjs'
 
 export default class MirrorStorage {
-  mirrorMaterial: BABYLON.StandardMaterial
-  mirrorTex: BABYLON.MirrorTexture
-  renderTarget: BABYLON.AbstractMesh[] = []
+  public renderTarget: BABYLON.AbstractMesh[] = []
+  
+  private mirrorMaterial: BABYLON.StandardMaterial
+  private mirrorTex: BABYLON.MirrorTexture
 
   constructor(scene: BABYLON.Scene) {
     //Create the mirror material
     this.mirrorMaterial = new BABYLON.StandardMaterial("mirror", scene);
     this.mirrorTex = new BABYLON.MirrorTexture("mirror", 1024, scene, true);
-    // TODO: mirrorTex.renderList = this.game.getPlayerMesh()
     this.mirrorMaterial.reflectionTexture = this.mirrorTex;
     
   }
 
-  createMirrorMaterial(glass: BABYLON.Mesh) {
+  public createMirrorMaterial(glass: BABYLON.Mesh) {
     glass.computeWorldMatrix(true);
     const glass_worldMatrix = glass.getWorldMatrix();
   

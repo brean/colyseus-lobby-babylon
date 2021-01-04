@@ -2,17 +2,18 @@ import * as GUI from "babylonjs-gui";
 
 // based on https://playground.babylonjs.com/#C6V6UY#5
 export default class VirtualJoystick {
-  puckDown: boolean;
-  left: boolean;
-  canvas: HTMLCanvasElement;
-  thumbContainer: GUI.Ellipse;
-  innerThumbContainer: GUI.Ellipse;
-  puck: GUI.Ellipse;
-  posX: number = 0;
-  posY: number = 0;
-  sideJoystickOffset = -50;
-  bottomJoystickOffset = -30;
-  horizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT
+  private puckDown: boolean;
+  private left: boolean;
+  private canvas: HTMLCanvasElement;
+  private thumbContainer: GUI.Ellipse;
+  private innerThumbContainer: GUI.Ellipse;
+  private puck: GUI.Ellipse;
+  private sideJoystickOffset = -50;
+  private bottomJoystickOffset = -30;
+  private horizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT
+
+  public posX: number = 0;
+  public posY: number = 0;
 
   constructor(canvas: HTMLCanvasElement, color: string = "blue", left: boolean = true) {
     this.canvas = canvas;
@@ -44,13 +45,13 @@ export default class VirtualJoystick {
     this.createPuckControl();
   }
 
-  createPuckControl() {
+  private createPuckControl() {
     this.thumbContainer.onPointerDownObservable.add(this.onPuckDown.bind(this));
     this.thumbContainer.onPointerUpObservable.add(this.onPuckUp.bind(this));
     this.thumbContainer.onPointerMoveObservable.add(this.onPuckMove.bind(this));
   }
 
-  onPuckDown(coordinates: any) {
+  private onPuckDown(coordinates: any) {
     this.puck.isVisible = true;
     const thumbWidth = (this.thumbContainer._currentMeasure.width*.5)
     const thumbOffset = thumbWidth+Math.abs(this.sideJoystickOffset)
@@ -67,7 +68,7 @@ export default class VirtualJoystick {
     this.thumbContainer.alpha = 0.9;
   }
 
-  onPuckUp(coordinates: any) {
+  private onPuckUp(coordinates: any) {
     this.posX = 0;
     this.posY = 0;
     this.puckDown = false;
@@ -75,7 +76,7 @@ export default class VirtualJoystick {
     this.thumbContainer.alpha = 0.4;
   }
 
-  onPuckMove(coordinates: any) {
+  private onPuckMove(coordinates: any) {
     if (this.puckDown) {
       const thumbWidth = this.thumbContainer._currentMeasure.width*.5
       const thumbOffset = thumbWidth+Math.abs(this.sideJoystickOffset)
@@ -90,14 +91,14 @@ export default class VirtualJoystick {
     }
   }
 
-  createAdvancedDynamicTexture() {
+  private createAdvancedDynamicTexture() {
     const adt = GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
     adt.addControl(this.thumbContainer);
     this.thumbContainer.addControl(this.innerThumbContainer);
     this.thumbContainer.addControl(this.puck);
   }
 
-  makeThumbArea(
+  private makeThumbArea(
       name: string, thickness: number, color: string, 
       background: string, radius: number){
     let rect = new GUI.Ellipse();

@@ -1,30 +1,35 @@
 import * as BABYLON_LOADER from 'babylonjs-loaders'
 import * as BABYLON from 'babylonjs'
+import { Asset, AssetLoader } from './AssetLoader';
 import MirrorStorage from './MirrorStorage'
+import { EventEmitter } from 'events';
 
 // Level parent
-export default class LevelLoader {
-  debugCollider: boolean = false;
+export default class LevelLoader extends EventEmitter {
+  public debugCollider: boolean = false;
+  public debugAreas: boolean = false;
   
-  name: string;
-  mirror: MirrorStorage;
-  basePathMapfile: string = 'maps';
-  basePathObj: string = 'obj';
-  tileNamesBySize: Map<number, string> = new Map<number, string>([
+  public name: string;
+
+  private mirror: MirrorStorage;
+  private basePathMapfile: string = 'maps';
+  private basePathObj: string = 'obj';
+  private assets:AssetLoader;
+  private tileNamesBySize: Map<number, string> = new Map<number, string>([
     [6, 'Large'],
     [1, 'Small'],
     [2, 'Medium']
   ]);
-  shadowGenerator?: BABYLON.ShadowGenerator;
 
-  data: any;
-  scene: BABYLON.Scene;
+  private data: any;
+  private scene: BABYLON.Scene;
 
-  constructor(mirror: MirrorStorage, scene: BABYLON.Scene, name: string, shadowGenerator?: BABYLON.ShadowGenerator) {
+  constructor(assets:AssetLoader, mirror: MirrorStorage, scene: BABYLON.Scene, name: string) {
+    super();
+    this.assets = assets;
     this.mirror = mirror;
     this.name = name;
     this.scene = scene;
-    this.shadowGenerator = shadowGenerator;
 
     //see https://doc.babylonjs.com/how_to/obj
     BABYLON_LOADER.OBJFileLoader.OPTIMIZE_WITH_UV = false;
@@ -33,20 +38,17 @@ export default class LevelLoader {
     this.load();
   }
 
-  setMaterialColor(material: BABYLON.StandardMaterial, color: string) {
+  private setMaterialColor(material: BABYLON.StandardMaterial, color: string) {
     material.diffuseColor = BABYLON.Color3.FromHexString(color)
   }
 
-  load() {
+  private load() {
     // load base map from AJAX
     const xhttp = new XMLHttpRequest();
     xhttp.onreadystatechange = () => {
       if (xhttp.readyState === 4 && xhttp.status === 200) {
         this.data = JSON.parse(xhttp.responseText);
-        // TODO: preloading!
-        this.loadBackground();
-        this.loadObjects();
-        this.loadAreas();
+        this.emit('data_loaded')
       }
     };
     xhttp.open("GET", `/${this.basePathMapfile}/${this.name}.json`, true);
@@ -54,7 +56,57 @@ export default class LevelLoader {
     // TODO: update data using WebSocket?
   }
 
-  applyPositionRotation(mesh: BABYLON.AbstractMesh, position: number[], rotation?: number[]) {
+  getAssets(): Asset[] {
+    let assets: Asset[] = [];
+    // background
+    const size = this.data.default_size;
+    const timeName = this.tileNamesBySize.get(size);
+    assets.push(
+      new Asset(
+        ``,
+        `area_tile_${timeName}_${this.data.default_type}`,
+        `/${this.basePathObj}/`,
+        `tile${timeName}_${this.data.default_type}.obj`,
+        true
+      )
+    )
+    // objects
+    for (const obj of this.data.objects) {
+      if (obj.type === 'mirror') {
+        continue
+      }
+      assets.push(
+        new Asset(
+          '', obj.name, `/${this.basePathObj}/`, 
+          `${obj.name}.obj`
+        )
+      )
+    }
+    // areas
+    for (const area of this.data.areas) {
+      if (area.type === 'hole') {
+        continue
+      }
+      const areaSize = this.tileNamesBySize.get(area.size);
+      assets.push(
+        new Asset(
+          ``,
+          `area_tile_${areaSize}_${area.name}`,
+          `/${this.basePathObj}/`,
+          `tile${areaSize}_${area.name}.obj`,
+          true)
+      )
+    }
+    return assets;
+  }
+
+  onAssetsLoaded() {
+    this.createBackground();
+    this.createObjects();
+    this.createArea();
+  }
+
+  private applyPositionRotation(mesh: BABYLON.AbstractMesh, position: number[], rotation?: number[]) {
     if (position) {
       mesh.position.x += position[0];
       mesh.position.y += position[1];
@@ -67,30 +119,38 @@ export default class LevelLoader {
     }
   }
 
-  loadAreas() {
+  private createArea() {
     for (const area of this.data.areas) {
       if (area.type === 'hole') {
         continue
       }
       const areaSize = this.tileNamesBySize.get(area.size);
-      BABYLON.SceneLoader.ImportMesh(
-        '', `/${this.basePathObj}/`, 
-        `tile${areaSize}_${area.name}.obj`, this.scene, (meshes) => {
-          if (area.color) {
-            this.setMaterialColor(
-              meshes[0].material as BABYLON.StandardMaterial, area.color)
-          }
-          for (const mesh of meshes) {
-            this.applyPositionRotation(mesh, area.pos)
-            mesh.position.y -= this.data.height;
-            mesh.receiveShadows = true;
-          }
-        }
-      );
+      const meshes = this.assets.getCopy(`area_tile_${areaSize}_${area.name}`)
+      if (!meshes) {
+        continue
+      }
+      if (area.color) {
+        meshes.forEach((mesh) => {
+          this.setMaterialColor(
+            mesh.material as BABYLON.StandardMaterial, area.color)
+        })
+        
+      }
+      for (const mesh of meshes) {
+        this.applyPositionRotation(mesh, area.pos)
+        mesh.position.y -= this.data.height;
+        mesh.receiveShadows = true;
+      }
+      
+      const options = {width: area.size, height: this.data.height, depth: area.size}
+      const mesh = BABYLON.MeshBuilder.CreateBox("box", options, this.scene);
+      mesh.visibility = this.debugAreas ? 0.5 : 0.0
+      this.applyPositionRotation(mesh, area.pos)
+
     }
   }
 
-  createCollider(obj: any) {
+  private createCollider(obj: any) {
     // show collider for debug
     const dim = obj.collider.dim
     let mesh
@@ -108,7 +168,7 @@ export default class LevelLoader {
     }
   }
 
-  loadObjects() {
+  private createObjects() {
     for (const obj of this.data.objects) {
       if (obj.type === 'mirror') {
         const glass = BABYLON.MeshBuilder.CreatePlane(
@@ -116,15 +176,14 @@ export default class LevelLoader {
         this.applyPositionRotation(glass, obj.pos, obj.rot);
         this.mirror.createMirrorMaterial(glass)
       } else {
-        BABYLON.SceneLoader.ImportMesh(
-          '', `/${this.basePathObj}/`, 
-          `${obj.name}.obj`, this.scene, (meshes) => {
-            for (const mesh of meshes) {
-              this.applyPositionRotation(mesh, obj.pos, obj.rot);
-              mesh.receiveShadows = obj.receiveShadows;
-            }
+        // we just grab the objects, assuming they are unique
+        const meshes = this.assets.assets.get(obj.name)
+        if (meshes) {
+          for (const mesh of meshes) {
+            this.applyPositionRotation(mesh, obj.pos, obj.rot);
+            mesh.receiveShadows = obj.receiveShadows;
           }
-        );
+        }
         if (obj.collider && this.debugCollider) {
           this.createCollider(obj);
         }
@@ -132,44 +191,47 @@ export default class LevelLoader {
     }
   }
 
-  loadBackground() {
+  private createBackground() {
     const size = this.data.default_size;
     const maxX = this.data.length / 2;
     const minX = -maxX;
     const maxZ = this.data.width / 2;
     const minZ = -maxZ;
     const timeName = this.tileNamesBySize.get(size);
-    BABYLON.SceneLoader.ImportMesh(
-      '', `/${this.basePathObj}/`, 
-      `tile${timeName}_${this.data.default_type}.obj`, this.scene, (meshes) => {
-        for (const mesh of meshes) {
-          mesh.position.y = -this.data.height;
+    const meshes = this.assets.getCopy(`area_tile_${timeName}_${this.data.default_type}`)
+    if (!meshes) {
+      throw new Error(`meshes not found for background area_tile_${timeName}_${this.data.default_type}`)
+    }
+    for (const mesh of meshes) {
+      mesh.position.y = -this.data.height;
+      if (this.data.default_color) {
+        meshes.forEach((mesh) => {
           this.setMaterialColor(
-            meshes[0].material as BABYLON.StandardMaterial, this.data.default_color)
+            mesh.material as BABYLON.StandardMaterial, this.data.default_color)
+        })
+      }
+    }
+    for (let i = minX; i < maxX; i+=size) {
+      for (let j = minZ; j < maxZ; j+=size) {
+        let cont = false;
+        for (const area of this.data.areas) {
+          if ((i === area.pos[0]) && (j === area.pos[2])) {
+            cont = true;
+            break;
+          }
         }
-        for (let i = minX; i < maxX; i+=size) {
-          for (let j = minZ; j < maxZ; j+=size) {
-            let cont = false;
-            for (const area of this.data.areas) {
-              if ((i === area.pos[0]) && (j === area.pos[2])) {
-                cont = true;
-                break;
-              }
-            }
-            if (cont) {
-              continue;
-            }
-            for (const mesh of meshes) {
-              const nmesh = mesh.clone(`tile_${i}_${j}`, mesh.parent, false)
-              if (nmesh) {
-                nmesh.position.z = j;
-                nmesh.position.x = i;
-                nmesh.receiveShadows = true;
-              }
-            }
+        if (cont) {
+          continue;
+        }
+        for (const mesh of meshes) {
+          const nmesh = mesh.clone(`tile_${i}_${j}`, mesh.parent, false)
+          if (nmesh) {
+            nmesh.position.z = j;
+            nmesh.position.x = i;
+            nmesh.receiveShadows = true;
           }
         }
       }
-    );
+    }
   }
 }

@@ -1,6 +1,6 @@
 # Blender v2.80 (sub 75) OBJ File: 'MGVP1_Export_File.blend'
 # www.blender.org
-mtllib characer_duck.mtl
+mtllib character_duck.mtl
 o characer_duck_Cube.048
 v 0.000000 0.677212 -0.175000
 v 0.000000 0.479888 -0.303109

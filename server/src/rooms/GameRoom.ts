@@ -5,7 +5,7 @@ import { Player } from "../entities/Player";
 import { StateHandler } from "../entities/StateHandler";
 import * as fs from 'fs';
 
-function getRandomColor () {
+function getRandomColor():string {
   const letters = '0123456789ABCDEF';
   let color = '#';
   for (var i = 0; i < 6; i++) {
@@ -14,17 +14,19 @@ function getRandomColor () {
   return color;
 }
 
+function getRandomCharacter():string {
+  return ['dog', 'duck', 'bear'][Math.floor(Math.random()*3)]
+}
+
 // Rename to something-game
 export class GameRoom extends Room {
-  firstUser: boolean = true
-  maxSpeed: number = 25
-  minSpeed: number = -25
+  private firstUser: boolean = true
+  private maxSpeed: number = 25
+  private minSpeed: number = -25
 
-  world: World = new World();
-  bodies: Map<string, Body> = new Map<string, Body>();
-  bodyRadius: number = 0.6;
-
-  maps: Map<string, any> = new Map<string, any>();
+  private world: World = new World();
+  private bodies: Map<string, Body> = new Map<string, Body>();
+  private bodyRadius: number = 0.6;
 
   // When the room is initialized
   onCreate (options: any) {
@@ -68,12 +70,12 @@ export class GameRoom extends Room {
     });
   }
 
-  setupPhysics() {
+  private setupPhysics() {
     this.world.gravity.set(0, -9.82, 0); // m/s²
     this.physicsFromMap('lobby')
   }
 
-  physicsFromMap(map: string) {
+  private physicsFromMap(map: string) {
     const content = fs.readFileSync(`../client/public/maps/${map}.json`).toString()
     const data = JSON.parse(content);
     const size = data.default_size;
@@ -112,7 +114,7 @@ export class GameRoom extends Room {
     }
   }
 
-  addGroundPlate(pos: number[], height, size) {
+  private addGroundPlate(pos: number[], height, size) {
     const groundBody = new Body({
       mass: 0 // mass === 0 makes the body static
     });
@@ -125,7 +127,7 @@ export class GameRoom extends Room {
     this.world.addBody(groundBody);
   }
 
-  applyPositionRotation(body, pos, rot) {
+  private applyPositionRotation(body, pos, rot) {
     if (pos) {
       body.position.x += pos[0]
       body.position.y += pos[1]
@@ -137,12 +139,11 @@ export class GameRoom extends Room {
       vec.x += rot[0]
       vec.y += rot[1]
       vec.z += rot[2]
-      console.log(vec)
       body.quaternion.setFromEuler(vec.x, vec.y, vec.z)
     }
   }
 
-  addCollider(obj) {
+  private addCollider(obj) {
     let collider = new Body({
       mass: 0 // mass === 0 makes the body static
     });
@@ -161,7 +162,7 @@ export class GameRoom extends Room {
     }
   }
 
-  resetPlayerPhysics(body: Body, player: Player) {
+  private resetPlayerPhysics(body: Body, player: Player) {
     // orientation
     body.quaternion.set(0,0,0,1);
     body.initQuaternion.set(0,0,0,1);
@@ -231,6 +232,7 @@ export class GameRoom extends Room {
       id: client.sessionId,
       name: 'New Player',
       color: getRandomColor(),
+      character: getRandomCharacter(),
       admin: this.firstUser
     });
 

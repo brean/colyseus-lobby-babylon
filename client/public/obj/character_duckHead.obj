@@ -1,6 +1,6 @@
 # Blender v2.80 (sub 75) OBJ File: 'MGVP1_Export_File.blend'
 # www.blender.org
-mtllib characer_duckHead.mtl
+mtllib character_duckHead.mtl
 o characer_duckHead_Cube.1338
 v -0.164918 0.934804 0.376636
 v 0.164918 0.934804 0.376636
