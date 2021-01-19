@@ -23,7 +23,8 @@ export class GameRoom extends Room {
   private firstUser: boolean = true
   private maxSpeed: number = 25
   private minSpeed: number = -25
-  private lastjump: boolean = false
+  private canJump: boolean = true
+  private canJumpOff: Array<Room> = []
 
   private world: World = new World();
   private bodies: Map<string, Body> = new Map<string, Body>();
@@ -190,7 +191,7 @@ export class GameRoom extends Room {
     player.z = body.position.z;
     player.speed = 0;
     player.jump = false;
-    this.lastjump = false;
+    this.canJump = true;
   }
 
   onUpdate (deltaTime: number) {
@@ -215,10 +216,9 @@ export class GameRoom extends Room {
         playerBody.velocity.x = 0;
         playerBody.velocity.z = 0;
       }
-      if (player.jump && !this.lastjump) {
-        console.log("JUMP!")
-        playerBody.velocity.y = 2;
-        //this.lastjump = true;
+      if (player.jump && this.canJump) {
+        playerBody.velocity.y = 7;
+        this.canJump = false
       }
 
       if (playerBody.position.y < -10) {
@@ -250,6 +250,13 @@ export class GameRoom extends Room {
        mass: 2, // kg
        shape: new Sphere(radius)
     });
+    playerBody.addEventListener('collide', (evt) => {
+      const body = evt.body;
+      if (evt.type === 'collide' && (
+        body.mass === 0 || this.canJumpOff.indexOf(body) >= 0)) {
+        this.canJump = true;
+      }
+    })
     this.resetPlayerPhysics(playerBody, playerData)
     this.bodies.set(playerData.id, playerBody)
     this.world.addBody(playerBody);
