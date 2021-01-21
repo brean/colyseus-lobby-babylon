@@ -3,6 +3,8 @@ import * as BABYLON from 'babylonjs'
 import { Asset, AssetLoader } from './AssetLoader';
 import MirrorStorage from './MirrorStorage'
 import { EventEmitter } from 'events';
+import UIManager from './UIManager';
+import AreaInteraction from './AreaInteraction';
 
 // Level parent
 export default class LevelLoader extends EventEmitter {
@@ -24,11 +26,19 @@ export default class LevelLoader extends EventEmitter {
 
   private data: any;
   private scene: BABYLON.Scene;
+  private ui: UIManager;
+  areaInteraction: AreaInteraction;
 
-  constructor(assets:AssetLoader, mirror: MirrorStorage, scene: BABYLON.Scene, name: string, shadowGenerator?:BABYLON.ShadowGenerator) {
+  constructor(assets:AssetLoader, 
+      ui:UIManager, mirror: MirrorStorage,
+      scene: BABYLON.Scene, name: string,
+      areaInteraction:AreaInteraction,
+      shadowGenerator?:BABYLON.ShadowGenerator) {
     super();
+    this.areaInteraction = areaInteraction;
     this.shadowGenerator = shadowGenerator;
     this.assets = assets;
+    this.ui = ui;
     this.mirror = mirror;
     this.name = name;
     this.scene = scene;
@@ -143,12 +153,14 @@ export default class LevelLoader extends EventEmitter {
         mesh.position.y -= this.data.height;
         mesh.receiveShadows = true;
       }
-      
-      const options = {width: area.size, height: this.data.height, depth: area.size}
-      const mesh = BABYLON.MeshBuilder.CreateBox("box", options, this.scene);
+      // collision object to interact with
+      const options = {width: area.size, height: this.data.height * 10, depth: area.size}
+      const mesh:BABYLON.Mesh = BABYLON.MeshBuilder.CreateBox("box", options, this.scene);
       mesh.visibility = this.debugAreas ? 0.5 : 0.0
       this.applyPositionRotation(mesh, area.pos)
-
+      if (area.type === 'change_color') {
+        this.areaInteraction.changeColorArea(mesh);
+      }
     }
   }
 

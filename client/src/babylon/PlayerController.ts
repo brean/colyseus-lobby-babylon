@@ -14,7 +14,10 @@ export default class PlayerController {
   private playerModel: PlayerModel;
   private meshes?: BABYLON.AbstractMesh[];
   private bodyRadius: number = 0.6;
+  public bodyMesh?: BABYLON.Mesh;
+  private oldMeshColor: String = '';
 
+  private scene:BABYLON.Scene
   private camera: BABYLON.FollowCamera
   private light?: BABYLON.DirectionalLight
   
@@ -30,10 +33,13 @@ export default class PlayerController {
     ['duck', 'White'],
     ['dog', 'Beige']
   ])
+  bodyPosition: BABYLON.Vector3 = new BABYLON.Vector3(0, 0, 0);
 
   constructor(
     assets: AssetLoader, mirror: MirrorStorage, 
-    playerModel: PlayerModel, camera:BABYLON.FollowCamera,
+    playerModel: PlayerModel, 
+    scene:BABYLON.Scene,
+    camera:BABYLON.FollowCamera,
     shadowGenerator?:ShadowGenerator,
     light?: BABYLON.DirectionalLight, 
     controllable: boolean = false) {
@@ -41,16 +47,34 @@ export default class PlayerController {
     this.assets = assets;
     this.mirror = mirror;
     this.playerModel = playerModel;
+    this.scene = scene;
     this.camera = camera;
     this.shadowGenerator = shadowGenerator;
     this.light = light;
     this.controllable = controllable;
+    if (this.controllable) {
+      this.bodyMesh = BABYLON.Mesh.CreateSphere("sphere", 4, this.bodyRadius, scene);
+      this.bodyPosition.y = this.bodyRadius / 2
+      this.bodyMesh.position = this.bodyMesh.position.add(this.bodyPosition);
+      this.bodyMesh.visibility = .5;
+    }
   }
 
   public loadPlayerModel() {
-    
     this.meshes = this.assets.getCopy(this.character)
     if (!this.meshes) {
+      return
+    }
+    this.setColor(this.playerModel.color);
+    for (const mesh of this.meshes) {
+      this.shadowGenerator?.addShadowCaster(mesh, true)
+      this.mirror.renderTarget.push(mesh)
+    }
+    this.update(this.playerModel);
+  }
+
+  private setColor(color: string) {
+    if (!this.meshes || this.oldMeshColor === color) {
       return
     }
     for (const mesh of this.meshes) {
@@ -59,13 +83,11 @@ export default class PlayerController {
         if (this.changeColors.get(this.character) === name) {
           this.setMaterialColor(
             mesh.material as BABYLON.StandardMaterial,
-            this.playerModel.color)
+            color)
         }
       }
-      this.shadowGenerator?.addShadowCaster(mesh, true)
-      this.mirror.renderTarget.push(mesh)
     }
-    this.update(this.playerModel);
+    this.oldMeshColor = color;
   }
 
   public update(playerModel: PlayerModel) {
@@ -87,7 +109,11 @@ export default class PlayerController {
       if (this.light) {
         this.light.position = basePos.add(this.lightPosition)
       }
+      if (this.bodyMesh) {
+        this.bodyMesh.position = basePos.add(this.bodyPosition)
+      }
     }
+    this.setColor(this.playerModel.color);
   }
 
   remove() {

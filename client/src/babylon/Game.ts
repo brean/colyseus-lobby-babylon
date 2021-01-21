@@ -8,6 +8,8 @@ import { AssetLoader, Asset } from './AssetLoader'
 import MirrorStorage from './MirrorStorage'
 import InputControls from './InputControls'
 import PlayerController from './PlayerController'
+import UIManager from './UIManager'
+import AreaInteraction from './AreaInteraction'
 
 export default class Game {
   private canvas: HTMLCanvasElement
@@ -19,6 +21,8 @@ export default class Game {
   private room: Room
   private players:Map<string, PlayerController> = new Map<string, PlayerController>()
   private controls: InputControls
+  private areaInteraction: AreaInteraction;
+
   private levelLoader: LevelLoader;
   private assets: AssetLoader;
   private mirror: MirrorStorage;
@@ -26,6 +30,7 @@ export default class Game {
   private characterModels = ['bear', 'dog', 'duck']
   private basePathObj: string = 'obj';
   private cameraPosition: BABYLON.Vector3 = new BABYLON.Vector3(12, 12, 0)
+  private ui: UIManager
 
   constructor (room: Room, level = 'lobby') {
     this.room = room;
@@ -46,9 +51,12 @@ export default class Game {
 
     this.mirror = new MirrorStorage(this.scene);
     this.createLight();
+    this.ui = new UIManager(this.canvas);
+    this.areaInteraction = new AreaInteraction(
+      this.ui, this.room, this.scene)
     this.levelLoader = new LevelLoader(
-      this.assets, this.mirror, this.scene, level, 
-      this.shadowGenerator);
+      this.assets, this.ui, this.mirror, this.scene, level, 
+      this.areaInteraction, this.shadowGenerator);
     this.assets.on('assets_loaded', () => {
       this.levelLoader.onAssetsLoaded()
       for (const player of this.players.values()) {
@@ -61,11 +69,12 @@ export default class Game {
       this.assets.assetsToLoad = assets;
       this.assets.preloadAssets();
     })
-
+    
     
     this.camera = this.createCamera();
+    
     this.controls = new InputControls(
-      this.room, this.engine, this.scene, this.canvas);
+      this.room, this.engine, this.scene, this.ui);
     this.run();
     this.resize();
 
@@ -160,10 +169,14 @@ export default class Game {
    */
   public addPlayer(playerModel: PlayerModel) {
     // load player model
+    const controllable = playerModel.id === this.playerId;
     const controller = new PlayerController(
       this.assets, this.mirror, playerModel, 
-      this.camera, this.shadowGenerator, this.light,
-      playerModel.id === this.playerId)
+      this.scene, this.camera, this.shadowGenerator, this.light,
+      controllable)
+    if (controllable) {
+      this.areaInteraction.setPlayer(controller);
+    }
     controller.loadPlayerModel();
     this.players.set(playerModel.id, controller);
   }

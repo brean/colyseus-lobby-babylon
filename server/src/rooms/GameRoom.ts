@@ -41,11 +41,16 @@ export class GameRoom extends Room {
     options.started = false
     this.setMetadata(options);
     this.setupPhysics();
-    this.onMessage('change_player', (client, player) => {
+    this.onMessage('change_color', (client, player) => {
       // handle player message
+      console.log('set color to ' + player.color)
       const p = state.players[client.sessionId]
       p.color = player.color;
-      p.name = player.name;
+    });
+    this.onMessage('change_character', (client, player) => {
+      // handle player message
+      const p = state.players[client.sessionId]
+      p.character = player.character;
     });
     this.onMessage('set_mode', (client, mode) => {
       // handle player message

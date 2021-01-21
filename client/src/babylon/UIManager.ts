@@ -14,6 +14,15 @@ export default class UIManager {
     this.adt.addControl(control);
   }
 
+  public createPicker(value: BABYLON.Color3): GUI.ColorPicker {
+    const picker = new GUI.ColorPicker();
+    picker.value = value;
+    picker.height = "150px";
+    picker.width = "150px";
+    picker.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
+    return picker;
+  }
+
   public makeCircle(
     name: string, thickness: number, color: string, 
     background: string, radius: number){

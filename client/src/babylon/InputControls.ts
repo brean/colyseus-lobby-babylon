@@ -12,7 +12,7 @@ export default class InputControls {
   
   private engine: BABYLON.Engine
   private scene: BABYLON.Scene
-  private canvas: HTMLCanvasElement
+  private ui: UIManager
   
   // Mobile controls
   private sticks: boolean = false
@@ -31,12 +31,13 @@ export default class InputControls {
   private orientation: number = 0.0
   private speed: number = 0.0
   private jump: boolean = false;
+  
 
   constructor (
       room:Room, engine:BABYLON.Engine, 
-      scene:BABYLON.Scene, canvas: HTMLCanvasElement) {
+      scene:BABYLON.Scene, ui:UIManager) {
     this.scene = scene;
-    this.canvas = canvas;
+    this.ui = ui;
     this.engine = engine;
     this.room = room;
     
@@ -156,9 +157,8 @@ export default class InputControls {
 
   // Mobile Phone/Pad
   private initMobileControls () {
-    const ui:UIManager = new UIManager(this.canvas)
-    this.leftStick = new VirtualJoystick(ui);
-    this.jumpButton = new VirtualButton(ui, 'blue', false);
+    this.leftStick = new VirtualJoystick(this.ui);
+    this.jumpButton = new VirtualButton(this.ui, 'blue', false);
     this.sticks = true;
   }
 
