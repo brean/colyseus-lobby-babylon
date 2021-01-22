@@ -14,13 +14,13 @@ notifications:
     on_failure: change
 
 install:
-  - cd client && npm install
-  - cd client && npm install --save-dev
-  - cd server && npm install
-  - cd server && npm install --save-dev
+  - cd client && npm install && cd ..
+  - cd client && npm install --save-dev && cd ..
+  - cd server && npm install && cd ..
+  - cd server && npm install --save-dev && cd ..
 
 script:
-  - cd client && npm run docs
-  - cd client && npm run eslint
-  - cd client && npm run test -- --coverage --watchAll=false
+  - cd client && npm run docs && cd ..
+  - cd client && npm run eslint && cd ..
+  - cd client && npm run test -- --coverage --watchAll=false && cd ..
   - cat ./client/coverage/lcov.info | ./client/node_modules/.bin/coveralls --verbose
