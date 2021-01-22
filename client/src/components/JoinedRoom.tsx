@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Client, Room } from 'colyseus.js';
+import { Client } from 'colyseus.js';
 import AppData from '../model/AppData';
 import Player from '../model/Player';
 
