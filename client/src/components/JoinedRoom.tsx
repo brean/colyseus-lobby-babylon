@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { Client } from 'colyseus.js';
 import AppData from '../model/AppData';
-import { Player } from '../model/Player';
+import Player from '../model/Player';
 
 import RoomMeta from '../model/RoomMeta';
 import Game from '../babylon/Game'

@@ -1,7 +1,7 @@
 // Game Environment
 import * as BABYLON from 'babylonjs'
 import { Room } from 'colyseus.js'
-import { Player as PlayerModel } from '../model/Player'
+import Player from '../model/Player'
 // import PlayerController from './PlayerController'
 import LevelLoader from './LevelLoader'
 import { AssetLoader, Asset } from './AssetLoader'
@@ -167,7 +167,7 @@ export default class Game {
   /**
    * add the player to the scene
    */
-  public addPlayer(playerModel: PlayerModel) {
+  public addPlayer(playerModel: Player) {
     // load player model
     const controllable = playerModel.id === this.playerId;
     const controller = new PlayerController(
@@ -181,7 +181,7 @@ export default class Game {
     this.players.set(playerModel.id, controller);
   }
 
-  public updatePlayer(playerModel: PlayerModel) {
+  public updatePlayer(playerModel: Player) {
     const player = this.players.get(playerModel.id)
     if (!player) {
       return
@@ -189,7 +189,7 @@ export default class Game {
     player.update(playerModel);
   }
 
-  public removePlayer(playerModel: PlayerModel) {
+  public removePlayer(playerModel: Player) {
     const controller = this.players.get(playerModel.id)
     if (!controller) {
       return

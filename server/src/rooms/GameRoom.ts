@@ -1,8 +1,8 @@
 import { Room, Client } from "colyseus";
 import { World, Body, Box, Sphere, Vec3 } from 'cannon-es';
 import { GAME_MODES, GAME_MAPS } from '../Settings';
-import { Player } from "../entities/Player";
-import { StateHandler } from "../entities/StateHandler";
+import Player from "../entities/Player";
+import StateHandler from "../entities/StateHandler";
 import * as fs from 'fs';
 
 function getRandomColor():string {
@@ -19,7 +19,7 @@ function getRandomCharacter():string {
 }
 
 // Rename to something-game
-export class GameRoom extends Room {
+export default class GameRoom extends Room {
   private firstUser: boolean = true
   private maxSpeed: number = 25
   private minSpeed: number = -25

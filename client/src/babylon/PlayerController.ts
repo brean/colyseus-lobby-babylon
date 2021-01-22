@@ -2,7 +2,7 @@
  * basic Player controller, handels input, collisions and player models
  */
 // see https://github.com/BabylonJS/SummerFestival/blob/master/src/characterController.ts
-import { Player as PlayerModel } from '../model/Player'
+import Player from '../model/Player'
 import * as BABYLON from 'babylonjs'
 import { AssetLoader } from './AssetLoader';
 import MirrorStorage from './MirrorStorage';
@@ -11,7 +11,7 @@ import { ShadowGenerator } from 'babylonjs';
 export default class PlayerController {
   private character: string;
   private controllable: boolean = false;
-  private playerModel: PlayerModel;
+  private playerModel: Player;
   private meshes?: BABYLON.AbstractMesh[];
   private bodyRadius: number = 0.6;
   public bodyMesh?: BABYLON.Mesh;
@@ -37,7 +37,7 @@ export default class PlayerController {
 
   constructor(
     assets: AssetLoader, mirror: MirrorStorage, 
-    playerModel: PlayerModel, 
+    playerModel: Player, 
     scene:BABYLON.Scene,
     camera:BABYLON.FollowCamera,
     shadowGenerator?:ShadowGenerator,
@@ -90,7 +90,7 @@ export default class PlayerController {
     this.oldMeshColor = color;
   }
 
-  public update(playerModel: PlayerModel) {
+  public update(playerModel: Player) {
     this.playerModel = playerModel;
     if (!this.meshes) {
       return
