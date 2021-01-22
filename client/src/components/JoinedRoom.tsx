@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Client } from 'colyseus.js';
+import { Client, Room } from 'colyseus.js';
 import AppData from '../model/AppData';
 import Player from '../model/Player';
 
@@ -8,7 +8,7 @@ import Game from '../babylon/Game'
 
 class JoinedRoom extends Component<{ appData: AppData, match: any }, RoomMeta> {
   players: {[id: string]: Player; } = {};
-  game: Game
+  game?: Game
 
   constructor(props: { appData: AppData, match: any }) {
     super(props);
@@ -17,7 +17,7 @@ class JoinedRoom extends Component<{ appData: AppData, match: any }, RoomMeta> {
 
   processCurrentRoom() {
     const appData: AppData = this.props.appData;
-    const room = appData.currentRoom;
+    const room: Room<any> | undefined = appData.currentRoom;
     this.game = new Game(room)
     if (!room) {
       return;
