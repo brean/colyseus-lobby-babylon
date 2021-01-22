@@ -17,11 +17,11 @@ class JoinedRoom extends Component<{ appData: AppData, match: any }, RoomMeta> {
 
   processCurrentRoom() {
     const appData: AppData = this.props.appData;
-    const room: Room<any> | undefined = appData.currentRoom;
-    this.game = new Game(room)
+    const room = appData.currentRoom;
     if (!room) {
       return;
     }
+    this.game = new Game(room)
     room.state.players.onAdd = (player: Player) => {
       this.players[player.id] = player
       if (room.sessionId === player.id) {
