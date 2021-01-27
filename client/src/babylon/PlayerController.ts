@@ -17,10 +17,10 @@ export default class PlayerController {
   public bodyMesh?: BABYLON.Mesh;
   private oldMeshColor: String = '';
 
-  private scene:BABYLON.Scene
   private camera: BABYLON.FollowCamera
   private light?: BABYLON.DirectionalLight
-  
+  private wilhelm: BABYLON.Sound
+
   private cameraPosition: BABYLON.Vector3 = new BABYLON.Vector3(12, 12, 0)
   private lightPosition: BABYLON.Vector3 = new BABYLON.Vector3(12, 12, 12)
 
@@ -47,17 +47,21 @@ export default class PlayerController {
     this.assets = assets;
     this.mirror = mirror;
     this.playerModel = playerModel;
-    this.scene = scene;
     this.camera = camera;
     this.shadowGenerator = shadowGenerator;
     this.light = light;
     this.controllable = controllable;
-    if (this.controllable) {
-      this.bodyMesh = BABYLON.Mesh.CreateSphere("sphere", 4, this.bodyRadius, scene);
-      this.bodyPosition.y = this.bodyRadius / 2
-      this.bodyMesh.position = this.bodyMesh.position.add(this.bodyPosition);
-      this.bodyMesh.visibility = .5;
-    }
+
+    this.wilhelm = new BABYLON.Sound("wilhelm", "/sound/wilhelm_scream.wav", scene);
+
+    this.bodyMesh = BABYLON.Mesh.CreateSphere("sphere", 4, this.bodyRadius, scene);
+    this.bodyPosition.y = this.bodyRadius / 2
+    this.bodyMesh.position = this.bodyMesh.position.add(this.bodyPosition);
+    this.bodyMesh.visibility = 0;
+  }
+
+  public getCharacter():string {
+    return this.character;
   }
 
   public loadPlayerModel() {
@@ -102,15 +106,19 @@ export default class PlayerController {
         mesh.rotation.set(0, player.rotation, 0)
       }
     }
+    const basePos = this.meshes[0].position;
+    if (this.bodyMesh) {
+      this.bodyMesh.position = basePos.add(this.bodyPosition)
+      if (this.bodyMesh.position.y < -1
+        && !this.wilhelm.isPlaying) {
+        this.wilhelm.play();
+      }
+    }
     if (this.controllable) {
-      const basePos = this.meshes[0].position;
       const camera = this.camera
       camera.position = basePos.add(this.cameraPosition)
       if (this.light) {
         this.light.position = basePos.add(this.lightPosition)
-      }
-      if (this.bodyMesh) {
-        this.bodyMesh.position = basePos.add(this.bodyPosition)
       }
     }
     this.setColor(this.playerModel.color);
