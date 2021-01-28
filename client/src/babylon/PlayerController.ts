@@ -52,7 +52,7 @@ export default class PlayerController {
     this.light = light;
     this.controllable = controllable;
 
-    this.wilhelm = new BABYLON.Sound("wilhelm", "/sound/wilhelm_scream.wav", scene);
+    this.wilhelm = new BABYLON.Sound("wilhelm", "/sound/wilhelm_scream.mp3", scene);
 
     this.bodyMesh = BABYLON.Mesh.CreateSphere("sphere", 4, this.bodyRadius, scene);
     this.bodyPosition.y = this.bodyRadius / 2
