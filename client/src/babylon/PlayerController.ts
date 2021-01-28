@@ -131,6 +131,9 @@ export default class PlayerController {
         mesh._scene.removeMesh(mesh);
       }
     }
+    if (this.bodyMesh) {
+      this.bodyMesh.dispose();
+    }
   }
 
   private setMaterialColor(material: BABYLON.StandardMaterial, color: string) {
