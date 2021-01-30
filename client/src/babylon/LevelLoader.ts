@@ -3,7 +3,7 @@ import * as BABYLON from 'babylonjs'
 import { Asset, AssetLoader } from './AssetLoader';
 import MirrorStorage from './MirrorStorage'
 import { EventEmitter } from 'events';
-import UIManager from './UIManager';
+import { UIManager } from './UIManager';
 import AreaInteraction from './AreaInteraction';
 
 // Level parent
@@ -136,7 +136,8 @@ export default class LevelLoader extends EventEmitter {
       if (area.type === 'hole') {
         continue
       }
-      const areaSize = this.tileNamesBySize.get(area.size);
+      let size = area.size > 6 ? 6 : area.size
+      const areaSize = this.tileNamesBySize.get(size);
       const meshes = this.assets.getCopy(`area_tile_${areaSize}_${area.name}`)
       if (!meshes) {
         continue
@@ -159,7 +160,10 @@ export default class LevelLoader extends EventEmitter {
       mesh.visibility = this.debugAreas ? 0.5 : 0.0
       this.applyPositionRotation(mesh, area.pos)
       if (area.type === 'change_color') {
-        this.areaInteraction.changeColorArea(mesh);
+        this.areaInteraction.changeColorArea(mesh, area);
+      }
+      if (area.type === 'change_character') {
+        this.areaInteraction.changeCharacterArea(mesh, area);
       }
     }
   }

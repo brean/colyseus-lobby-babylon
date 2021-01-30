@@ -1,5 +1,5 @@
 import * as BABYLON from 'babylonjs'
-import { EventEmitter } from 'events'
+import { Observable } from 'babylonjs'
 
 class Asset {
   meshName: string
@@ -22,7 +22,8 @@ class Asset {
   }
 }
 
-class AssetLoader extends EventEmitter {
+class AssetLoader {
+  assetsLoaded: Observable<null> = new Observable<null>()
   assets: Map<string, BABYLON.AbstractMesh[]> = new Map<string, BABYLON.AbstractMesh[]>();
   assetsToLoad: Asset[] = []
   numAssets: number = 0
@@ -33,7 +34,6 @@ class AssetLoader extends EventEmitter {
   private loadingShown: boolean = false;
 
   constructor(engine: BABYLON.Engine, scene?: BABYLON.Scene) {
-    super()
     this.scene = scene;
     this.engine = engine;
   }
@@ -84,7 +84,7 @@ class AssetLoader extends EventEmitter {
     if (this.loadedAssets === this.numAssets) {
       this.assetsToLoad = []
       this.hideLoading()
-      this.emit('assets_loaded')
+      this.assetsLoaded.notifyObservers(null)
     }
   }
 

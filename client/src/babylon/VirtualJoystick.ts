@@ -1,5 +1,5 @@
 import * as GUI from "babylonjs-gui";
-import UIManager from './UIManager'
+import { UIManager } from './UIManager'
 
 // based on https://playground.babylonjs.com/#C6V6UY#5
 export default class VirtualJoystick {
@@ -22,7 +22,7 @@ export default class VirtualJoystick {
     this.left = left;
 
     this.thumbContainer = this.makeThumbArea(
-      "thumb", 2, color, "", 140
+      "thumb", color, 2, '', 140
     );
     this.thumbContainer.alpha = 0.4;
     if (left) {
@@ -35,11 +35,11 @@ export default class VirtualJoystick {
     this.thumbContainer.verticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_BOTTOM;
 
     this.innerThumbContainer = this.makeThumbArea(
-      "innerThumb", 2, color, "", 60
+      "innerThumb", color, 2, '', 60
     );
 
     this.puck = this.makeThumbArea(
-      "puck", 0, color, color, 50
+      "puck", color, 2, color, 50
     )
     this.ui.addControl(this.thumbContainer);
     this.thumbContainer.addControl(this.innerThumbContainer);
@@ -96,11 +96,11 @@ export default class VirtualJoystick {
   }
 
   private makeThumbArea(
-      name: string, thickness: number, color: string, 
+      name: string, color: string, thickness: number, 
       background: string, radius: number){
-    return this.ui.makeCircle(
+    return this.ui.createCircle(
       this.left ? `left${name}` : `right${name}`,
-      thickness, color, background, radius
+      color, thickness, background, radius
     );
   }
 }

@@ -6,12 +6,17 @@ import Player from '../model/Player'
 import LevelLoader from './LevelLoader'
 import { AssetLoader, Asset } from './AssetLoader'
 import MirrorStorage from './MirrorStorage'
-import InputControls from './InputControls'
+import { InputControls } from './InputControls'
 import PlayerController from './PlayerController'
-import UIManager from './UIManager'
+import { UIManager } from './UIManager'
 import AreaInteraction from './AreaInteraction'
+import SettingsMenu from './SettingsMenu'
+import GameSettings from './GameSettings'
 
-export default class Game {
+const CHARACTER_MODELS = ['mage', 'bear', 'dog', 'duck']
+
+class Game {
+  private gameSettings: GameSettings = new GameSettings();
   private canvas: HTMLCanvasElement
   private scene: BABYLON.Scene
   private engine: BABYLON.Engine
@@ -27,7 +32,6 @@ export default class Game {
   private assets: AssetLoader;
   private mirror: MirrorStorage;
   private shadowGenerator?: BABYLON.ShadowGenerator;
-  private characterModels = ['bear', 'dog', 'duck']
   private basePathObj: string = 'obj';
   private cameraPosition: BABYLON.Vector3 = new BABYLON.Vector3(12, 12, 0)
   private ui: UIManager
@@ -52,15 +56,20 @@ export default class Game {
     this.mirror = new MirrorStorage(this.scene);
     this.createLight();
     this.ui = new UIManager(this.canvas);
+    this.controls = new InputControls(
+      this.room, this.engine,
+      this.scene, this.ui, this.gameSettings);
     this.areaInteraction = new AreaInteraction(
-      this.ui, this.room, this.scene)
+      this.ui, this.room, this.gameSettings,
+      this.controls, this.assets, this.scene)
     this.levelLoader = new LevelLoader(
       this.assets, this.ui, this.mirror, this.scene, level, 
       this.areaInteraction, this.shadowGenerator);
-    this.assets.on('assets_loaded', () => {
+    this.assets.assetsLoaded.add(() => {
       this.levelLoader.onAssetsLoaded()
       for (const player of this.players.values()) {
         player.loadPlayerModel()
+        player.update();
       }
     });
     this.levelLoader.on('data_loaded', () => {
@@ -69,12 +78,10 @@ export default class Game {
       this.assets.assetsToLoad = assets;
       this.assets.preloadAssets();
     })
-    
+    new SettingsMenu(this.ui, this.gameSettings);
     
     this.camera = this.createCamera();
     
-    this.controls = new InputControls(
-      this.room, this.engine, this.scene, this.ui);
     this.run();
     this.resize();
 
@@ -83,9 +90,12 @@ export default class Game {
     });
   }
 
+  /**
+   * load all character models
+   */
   characterAssets(): Asset[] {
     let assets: Asset[] = []
-    for (const charAsset of this.characterModels) {
+    for (const charAsset of CHARACTER_MODELS) {
       assets.push(
         new Asset(
           ``,
@@ -171,7 +181,7 @@ export default class Game {
     // load player model
     const controllable = playerModel.id === this.playerId;
     const controller = new PlayerController(
-      this.assets, this.mirror, playerModel, 
+      this.assets, this.gameSettings, this.mirror, playerModel, 
       this.scene, this.camera, this.shadowGenerator, this.light,
       controllable)
     if (controllable) {
@@ -198,3 +208,5 @@ export default class Game {
     this.players.delete(playerModel.id);
   }
 }
+
+export {Game, CHARACTER_MODELS}

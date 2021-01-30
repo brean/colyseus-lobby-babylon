@@ -1,21 +1,66 @@
 import { Room, Client } from "colyseus";
-import { World, Body, Box, Sphere, Vec3 } from 'cannon-es';
+import { World, Body, Box, Sphere, Vec3, Cylinder } from 'cannon-es';
 import { GAME_MODES, GAME_MAPS } from '../Settings';
 import Player from "../entities/Player";
 import StateHandler from "../entities/StateHandler";
 import * as fs from 'fs';
 
-function getRandomColor():string {
-  const letters = '0123456789ABCDEF';
-  let color = '#';
-  for (var i = 0; i < 6; i++) {
-    color += letters[Math.floor(Math.random() * 16)];
+const CHARACTER_MODELS = ['mage', 'dog', 'duck', 'bear']
+
+// based on https://stackoverflow.com/questions/46432335/hex-to-hsl-convert-javascript
+function hexToHsl(color) {
+  var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(color);
+
+  var r = parseInt(result[1], 16);
+  var g = parseInt(result[2], 16);
+  var b = parseInt(result[3], 16);
+
+  r /= 255, g /= 255, b /= 255;
+  var max = Math.max(r, g, b), min = Math.min(r, g, b);
+  var h, s, l = (max + min) / 2;
+
+  if(max == min){
+      h = s = 0; // achromatic
+  } else {
+      var d = max - min;
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+      switch(max) {
+          case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+          case g: h = (b - r) / d + 2; break;
+          case b: h = (r - g) / d + 4; break;
+      }
+      h /= 6;
   }
-  return color;
+
+  s = s*100;
+  s = Math.round(s);
+  l = l*100;
+  l = Math.round(l);
+  h = Math.round(360*h);
+  return [h, s, l]
+}
+
+// use HSL to always garantee a bright color
+// based on https://stackoverflow.com/questions/36721830/convert-hsl-to-rgb-and-hex
+function hslToHex(hue: number, saturation: number, lightness:number) {
+  lightness /= 100;
+  const a = saturation * Math.min(lightness, 1 - lightness) / 100;
+  const f = n => {
+    const k = (n + hue / 30) % 12;
+    const color = lightness - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+    return Math.round(255 * color).toString(16).padStart(2, '0');
+  };
+
+  return `#${f(0)}${f(8)}${f(4)}`;
+}
+
+function getRandomColor():string {
+  const color = hslToHex(Math.random()*360, 80, 50);
+  return color.toUpperCase();
 }
 
 function getRandomCharacter():string {
-  return ['dog', 'duck', 'bear'][Math.floor(Math.random()*3)]
+  return CHARACTER_MODELS[Math.floor(Math.random()*3)]
 }
 
 // Rename to something-game
@@ -28,7 +73,8 @@ export default class GameRoom extends Room {
 
   private world: World = new World();
   private bodies: Map<string, Body> = new Map<string, Body>();
-  private bodyRadius: number = 0.6;
+  private bodyRadius: number = 0.4;
+  private spawnAreas: Array<any>;
 
   // When the room is initialized
   onCreate (options: any) {
@@ -41,16 +87,32 @@ export default class GameRoom extends Room {
     options.started = false
     this.setMetadata(options);
     this.setupPhysics();
-    this.onMessage('change_color', (client, player) => {
-      // handle player message
-      console.log('set color to ' + player.color)
+    this.onMessage('change_hue', (client, hueDifference) => {
       const p = state.players[client.sessionId]
-      p.color = player.color;
+      let color = p.color;
+      const hsl = hexToHsl(color)
+      let hue = hsl[0] + hueDifference
+      if (hue > 360) {
+        hue -= 360
+      }
+      if (hue < 0) {
+        hue += 360
+      }
+      color = hslToHex(hue, hsl[1], hsl[2])
+      console.log('set color to ' + color)
+      p.color = color;
     });
-    this.onMessage('change_character', (client, player) => {
+    this.onMessage('change_color', (client, color) => {
       // handle player message
+      console.log('set color to ' + color)
       const p = state.players[client.sessionId]
-      p.character = player.character;
+      p.color = color;
+    });
+    this.onMessage('change_character', (client, character) => {
+      // handle player message
+      console.log(`change to character ${character}`)
+      const p = state.players[client.sessionId]
+      p.character = character;
     });
     this.onMessage('set_mode', (client, mode) => {
       // handle player message
@@ -84,17 +146,18 @@ export default class GameRoom extends Room {
   }
 
   private physicsFromMap(map: string) {
+    this.spawnAreas = [];
     const content = fs.readFileSync(`../client/public/maps/${map}.json`).toString()
-    const data = JSON.parse(content);
-    const size = data.default_size;
-    const maxX = data.length / 2;
+    const mapData = JSON.parse(content);
+    const size = mapData.default_size;
+    const maxX = mapData.length / 2;
     const minX = -maxX;
-    const maxZ = data.width / 2;
+    const maxZ = mapData.width / 2;
     const minZ = -maxZ;
     for (let i = minX; i < maxX; i+=size) {
       for (let j = minZ; j < maxZ; j+=size) {
         let cont = false;
-        for (const area of data.areas) {
+        for (const area of mapData.areas) {
           if ((i === area.pos[0]) && (j === area.pos[2])) {
             cont = true;
             break;
@@ -103,18 +166,21 @@ export default class GameRoom extends Room {
         if (cont) {
           continue;
         }
-        this.addGroundPlate([i, 0, j], data.height, size)
+        this.addGroundPlate([i, 0, j], mapData.height, size)
       }
     }
 
-    for (const area of data.areas) {
+    for (const area of mapData.areas) {
       if (area.type === 'hole') {
         continue
+      } else if (area.type === 'spawn') {
+        this.spawnAreas.push(area);
       }
-      this.addGroundPlate(area.pos, data.height, area.size)
+
+      this.addGroundPlate(area.pos, mapData.height, area.size)
     }
 
-    for (const obj of data.objects) {
+    for (const obj of mapData.objects) {
       if (!obj.collider) {
         continue
       }
@@ -161,12 +227,33 @@ export default class GameRoom extends Room {
       default:
       case 'cube':
         colliderShape = new Box(new Vec3(dim[0]/2, dim[1]/2, dim[2]/2));
+        break;
+      case 'cylinder':
+        colliderShape = new Cylinder(
+          obj.collider.radius_top || obj.collider.radius,
+          obj.collider.radius_bottom || obj.collider.radius,
+          obj.collider.height,
+          obj.collider.segments || 16)
+        break;
     }
     if (colliderShape) {
       this.applyPositionRotation(collider, obj.pos, obj.rot)
       this.applyPositionRotation(collider, obj.collider.pos, obj.collider.rot)
       collider.addShape(colliderShape);
       this.world.addBody(collider);
+    }
+  }
+
+  private spawnPosition(body: Body) {
+    if (this.spawnAreas.length > 0) {
+      const spawnArea = this.spawnAreas[Math.floor(Math.random() * this.spawnAreas.length)];
+      body.position.x = Math.random() * spawnArea.size + spawnArea.pos[0] - spawnArea.size/2;
+      body.position.y = this.bodyRadius  + spawnArea.pos[1];
+      body.position.z = Math.random() * spawnArea.size  + spawnArea.pos[2] - spawnArea.size/2;
+    } else {
+      body.position.x = Math.random() * 6 - 3;
+      body.position.y = this.bodyRadius;
+      body.position.z = Math.random() * 6 - 3;
     }
   }
 
@@ -187,9 +274,7 @@ export default class GameRoom extends Room {
     body.force.setZero();
     body.torque.setZero();
 
-    body.position.x = Math.random() * 6 - 3;
-    body.position.y = this.bodyRadius;
-    body.position.z = Math.random() * 6 - 3;
+    this.spawnPosition(body)
 
     player.x = body.position.x;
     player.y = body.position.y;

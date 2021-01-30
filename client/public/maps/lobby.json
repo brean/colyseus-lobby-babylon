@@ -8,23 +8,62 @@
     "default_size": 6,
     "areas": [
         {
-            "pos": [-12, 0, -6],
-            "size": 6,
-            "name": "neutral",
-            "color": "#aa6666",
-            "type": "change_character"
-        },
-        {
-            "pos": [-12, 0, 6],
+            "pos": [-6, 0, -6],
             "size": 6,
             "name": "neutral",
             "color": "#6666aa",
-            "type": "change_color"
+            "type": "change_character",
+            "canJump": false
         },
         {
-            "pos": [6, 0, 6],
+            "pos": [-6, 0, 0],
             "size": 6,
-            "type": "hole"
+            "name": "neutral",
+            "color": "#6666aa",
+            "type": "change_color",
+            "canJump": false
+        },
+        {
+            "pos": [0, 0, 0],
+            "size": 6,
+            "name": "neutral",
+            "color": "#aa6666",
+            "type": "spawn"
+        },
+        {
+            "pos": [0, 0, -6],
+            "size": 6,
+            "name": "neutral",
+            "color": "#aa6666",
+            "type": "spawn"
+        },
+        {
+            "pos": [6, 0, -6],
+            "size": 6,
+            "name": "neutral",
+            "color": "#66aa66",
+            "type": "start_game"
+        },
+        {
+            "pos": [12, 0, -6],
+            "size": 6,
+            "name": "neutral",
+            "color": "#66aa66",
+            "type": "start_game"
+        },
+        {
+            "pos": [6, 0, 0],
+            "size": 6,
+            "name": "neutral",
+            "color": "#66aa66",
+            "type": "start_game"
+        },
+        {
+            "pos": [12, 0, 0],
+            "size": 6,
+            "name": "neutral",
+            "color": "#66aa66",
+            "type": "start_game"
         }
     ],
     "obstacles": [
@@ -32,7 +71,7 @@
     "objects": [
         {
             "name": "wardrobe",
-            "pos": [-12, 0, -6],
+            "pos": [-6, 0, -6],
             "rot": [0, 1.5707, 0],
             "receiveShadows": false,
             "collider": {
@@ -42,8 +81,22 @@
             }
         },
         {
+            "name": "button",
+            "pos": [9, 0, -3],
+            "rot": [0, 0, 0],
+            "receiveShadows": true,
+            "collider": {
+                "type": "cylinder",
+                "radius_top": 3.6,
+                "radius_bottom": 3.8,
+                "height": 1,
+                "segments": 16,
+                "pos": [0, 0, 0]
+            }
+        },
+        {
             "name": "mirror",
-            "pos": [-12, 0, 7],
+            "pos": [-6, 0, 1],
             "rot": [0.0, -1.5707, 0.0],
             "receiveShadows": false,
             "collider": {
@@ -54,7 +107,7 @@
         },
         {
             "name": "table_brush",
-            "pos": [-12, 0, 5],
+            "pos": [-6, 0, -1],
             "rot": [0, -0.2, 0],
             "receiveShadows": false,
             "collider": {
@@ -67,7 +120,7 @@
             "type": "mirror",
             "width": 1.2,
             "height": 2.6,
-            "pos": [-12, 1.4, 7],
+            "pos": [-6, 1.4, 1],
             "rot": [0.0, -1.5707, 0.0]
         }
     ]

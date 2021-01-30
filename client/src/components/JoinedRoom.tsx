@@ -4,7 +4,7 @@ import AppData from '../model/AppData';
 import Player from '../model/Player';
 
 import RoomMeta from '../model/RoomMeta';
-import Game from '../babylon/Game'
+import { Game } from '../babylon/Game'
 
 class JoinedRoom extends Component<{ appData: AppData, match: any }, RoomMeta> {
   players: {[id: string]: Player; } = {};
