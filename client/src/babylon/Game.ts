@@ -35,8 +35,10 @@ class Game {
   private basePathObj: string = 'obj';
   private cameraPosition: BABYLON.Vector3 = new BABYLON.Vector3(12, 12, 0)
   private ui: UIManager
+  private _level: string
 
   constructor (room: Room, level = 'lobby') {
+    this._level = level;
     this.room = room;
     this.canvas = (document.getElementById('renderCanvas') as HTMLCanvasElement);
     // Load the 3D engine
@@ -88,6 +90,17 @@ class Game {
     window.addEventListener('resize', () => {
       this.resize();
     });
+  }
+
+  changeLevel(level: string) {
+    if (this._level === level) {
+      return;
+    }
+    this._level = level;
+    this.levelLoader.cleanup();
+    console.log(`load new level ${level}`);
+    this.levelLoader.name = level;
+    this.levelLoader.load()
   }
 
   /**

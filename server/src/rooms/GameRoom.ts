@@ -87,12 +87,15 @@ export default class GameRoom extends Room {
 
   private setupPhysics() {
     this.world.gravity.set(0, -9.82, 0); // m/s²
-    this.physicsFromMap('lobby')
+    this.loadLevel('lobby')
+    // todo: reset all player (?)
   }
 
-  private physicsFromMap(map: string) {
+  private loadLevel(level: string) {
+    this.broadcast("change_level", level)
+    this.state.level = level;
     this.spawnAreas = [];
-    const content = fs.readFileSync(`../client/public/maps/${map}.json`).toString()
+    const content = fs.readFileSync(`../client/public/maps/${level}.json`).toString()
     const mapData = JSON.parse(content);
     const size = mapData.default_size;
     const maxX = mapData.length / 2;
@@ -102,10 +105,12 @@ export default class GameRoom extends Room {
     for (let i = minX; i < maxX; i+=size) {
       for (let j = minZ; j < maxZ; j+=size) {
         let cont = false;
-        for (const area of mapData.areas) {
-          if ((i === area.pos[0]) && (j === area.pos[2])) {
-            cont = true;
-            break;
+        if (mapData.areas) {
+          for (const area of mapData.areas) {
+            if ((i === area.pos[0]) && (j === area.pos[2])) {
+              cont = true;
+              break;
+            }
           }
         }
         if (cont) {
@@ -114,23 +119,33 @@ export default class GameRoom extends Room {
         this.addGroundPlate([i, 0, j], mapData.height, size)
       }
     }
-
-    for (const area of mapData.areas) {
-      if (area.type === 'hole') {
-        continue
-      } else if (area.type === 'spawn') {
-        this.spawnAreas.push(area);
+    if (mapData.areas) {
+      for (const area of mapData.areas) {
+        if (area.type === 'hole') {
+          continue
+        } else if (area.type === 'spawn') {
+          this.spawnAreas.push(area);
+        }
+        const shape = this.addGroundPlate(area.pos, mapData.height, area.size)
+        this.areas.set(shape, area);
       }
-      const shape = this.addGroundPlate(area.pos, mapData.height, area.size)
-      this.areas.set(shape, area);
     }
-
-    for (const obj of mapData.objects) {
-      if (!obj.collider) {
-        continue
+    if (mapData.objects) {
+      for (const obj of mapData.objects) {
+        if (!obj.collider) {
+          continue
+        }
+        this.addCollider(obj)
       }
-      this.addCollider(obj)
     }
+  }
+
+  private resetWorld() {
+    this.world = new World();
+    this.world.gravity.set(0, -9.82, 0); // m/s²
+    this.bodies.forEach((playerBody) => {
+      this.world.addBody(playerBody);
+    })
   }
 
   private addGroundPlate(pos: number[], height, size): Body {
@@ -297,7 +312,6 @@ export default class GameRoom extends Room {
         if (!area) {
           return;
         }
-        console.log(area.type)
         playerData.ready = area.type === 'start';
         if (playerData.ready) {
           this.checkAllPlayerReady()
@@ -323,12 +337,12 @@ export default class GameRoom extends Room {
         allReady = false;
       }
     })
-    console.log(numPlayer)
     if (numPlayer < 2) {
       allReady = false;
     }
     if (allReady) {
-      console.log('START!')
+      this.resetWorld()
+      this.loadLevel('fields')
     }
   }
 

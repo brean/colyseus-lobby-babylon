@@ -3,4 +3,5 @@ import Player from "../entities/Player";
 
 export default class StateHandler extends Schema {
   @type({ map: Player }) players = new MapSchema<Player>();
+  @type('string') level: string = 'lobby'
 }

@@ -12,6 +12,8 @@ export default class LevelLoader extends EventEmitter {
   public debugAreas: boolean = false;
   
   public name: string;
+  public levelMeshes: BABYLON.AbstractMesh[] = []
+  public levelMeshesShadowCasting: BABYLON.AbstractMesh[] = []
 
   private mirror: MirrorStorage;
   private basePathMapfile: string = 'maps';
@@ -54,7 +56,7 @@ export default class LevelLoader extends EventEmitter {
     material.diffuseColor = BABYLON.Color3.FromHexString(color)
   }
 
-  private load() {
+  public load() {
     // load base map from AJAX
     const xhttp = new XMLHttpRequest();
     xhttp.onreadystatechange = () => {
@@ -83,36 +85,41 @@ export default class LevelLoader extends EventEmitter {
       )
     )
     // objects
-    for (const obj of this.data.objects) {
-      if (obj.type === 'mirror') {
-        continue
-      }
-      assets.push(
-        new Asset(
-          '', obj.name, `/${this.basePathObj}/`, 
-          `${obj.name}.obj`
+    if (this.data.objects) {
+      for (const obj of this.data.objects) {
+        if (obj.type === 'mirror') {
+          continue
+        }
+        assets.push(
+          new Asset(
+            '', obj.name, `/${this.basePathObj}/`, 
+            `${obj.name}.obj`
+          )
         )
-      )
-    }
-    // areas
-    for (const area of this.data.areas) {
-      if (area.type === 'hole') {
-        continue
       }
-      const areaSize = this.tileNamesBySize.get(area.size);
-      assets.push(
-        new Asset(
-          ``,
-          `area_tile_${areaSize}_${area.name}`,
-          `/${this.basePathObj}/`,
-          `tile${areaSize}_${area.name}.obj`,
-          true)
-      )
+    }
+    if (this.data.areas) {
+      // areas
+      for (const area of this.data.areas) {
+        if (area.type === 'hole') {
+          continue
+        }
+        const areaSize = this.tileNamesBySize.get(area.size);
+        assets.push(
+          new Asset(
+            ``,
+            `area_tile_${areaSize}_${area.name}`,
+            `/${this.basePathObj}/`,
+            `tile${areaSize}_${area.name}.obj`,
+            true)
+        )
+      }
     }
     return assets;
   }
 
   onAssetsLoaded() {
+    console.log('onassetsloaded')
     this.createBackground();
     this.createObjects();
     this.createArea();
@@ -132,6 +139,9 @@ export default class LevelLoader extends EventEmitter {
   }
 
   private createArea() {
+    if (!this.data.areas) {
+      return
+    }
     for (const area of this.data.areas) {
       if (area.type === 'hole') {
         continue
@@ -153,11 +163,13 @@ export default class LevelLoader extends EventEmitter {
         this.applyPositionRotation(mesh, area.pos)
         mesh.position.y -= this.data.height;
         mesh.receiveShadows = true;
+        this.levelMeshes.push(mesh)
       }
       // collision object to interact with
       const options = {width: area.size, height: this.data.height * 10, depth: area.size}
       const mesh:BABYLON.Mesh = BABYLON.MeshBuilder.CreateBox("box", options, this.scene);
       mesh.visibility = this.debugAreas ? 0.5 : 0.0
+      this.levelMeshes.push(mesh)
       this.applyPositionRotation(mesh, area.pos)
       if (area.type === 'change_color') {
         this.areaInteraction.changeColorArea(mesh, area);
@@ -183,16 +195,21 @@ export default class LevelLoader extends EventEmitter {
       this.applyPositionRotation(mesh, obj.collider.pos, obj.collider.rot)
       mesh.material = new BABYLON.StandardMaterial('transparent', this.scene);
       mesh.material.alpha = 0.5
+      this.levelMeshes.push(mesh)
     }
   }
 
   private createObjects() {
+    if (!this.data.objects) {
+      return
+    }
     for (const obj of this.data.objects) {
       if (obj.type === 'mirror') {
         const glass = BABYLON.MeshBuilder.CreatePlane(
           'glass', {width: obj.width, height: obj.height}, this.scene);
         this.applyPositionRotation(glass, obj.pos, obj.rot);
         this.mirror.createMirrorMaterial(glass)
+        this.levelMeshes.push(glass)
       } else {
         // we just grab the objects, assuming they are unique
         const meshes = this.assets.assets.get(obj.name)
@@ -201,6 +218,7 @@ export default class LevelLoader extends EventEmitter {
             this.applyPositionRotation(mesh, obj.pos, obj.rot);
             mesh.receiveShadows = obj.receiveShadows;
             this.shadowGenerator?.addShadowCaster(mesh, true)
+            this.levelMeshesShadowCasting.push(mesh)
           }
         }
         if (obj.collider && this.debugCollider) {
@@ -233,10 +251,12 @@ export default class LevelLoader extends EventEmitter {
     for (let i = minX; i < maxX; i+=size) {
       for (let j = minZ; j < maxZ; j+=size) {
         let cont = false;
-        for (const area of this.data.areas) {
-          if ((i === area.pos[0]) && (j === area.pos[2])) {
-            cont = true;
-            break;
+        if (this.data.areas) {
+          for (const area of this.data.areas) {
+            if ((i === area.pos[0]) && (j === area.pos[2])) {
+              cont = true;
+              break;
+            }
           }
         }
         if (cont) {
@@ -248,9 +268,22 @@ export default class LevelLoader extends EventEmitter {
             nmesh.position.z = j;
             nmesh.position.x = i;
             nmesh.receiveShadows = true;
+            this.levelMeshes.push(nmesh)
           }
         }
       }
     }
+  }
+
+  public cleanup() {
+    for (const mesh of this.levelMeshes) {
+      this.scene.removeMesh(mesh);
+    }
+    this.levelMeshes = []
+    for (const mesh of this.levelMeshesShadowCasting) {
+      this.shadowGenerator?.removeShadowCaster(mesh, true)
+      this.scene.removeMesh(mesh);
+    }
+    this.levelMeshesShadowCasting = []
   }
 }

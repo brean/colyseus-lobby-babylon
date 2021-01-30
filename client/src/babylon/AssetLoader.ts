@@ -81,7 +81,7 @@ class AssetLoader {
       this.assets.set(asset.meshGroup, meshes)
     }
     this.engine.loadingScreen.loadingUIText = `loading ${this.loadedAssets}/${this.numAssets}: 100 %`;
-    if (this.loadedAssets === this.numAssets) {
+    if (this.loadedAssets >= this.numAssets) {
       this.assetsToLoad = []
       this.hideLoading()
       this.assetsLoaded.notifyObservers(null)
@@ -89,6 +89,7 @@ class AssetLoader {
   }
 
   private hideLoading() {
+    this.loadedAssets = 0;
     if (this.loadingShown) {
       this.loadingShown = false;
       this.engine.loadingScreen.hideLoadingUI();

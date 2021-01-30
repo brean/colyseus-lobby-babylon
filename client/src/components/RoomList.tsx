@@ -132,7 +132,7 @@ class RoomList extends Component<{ appData: AppData }, SelectedFilter> {
                     tag="div"
                     theme="textSecondaryOnBackground"
                   >
-                  Touch/Click here to create a new room and start a new Game.
+                  Touch/Click here to create a new Game lobby.
                   </Typography>
                 </div>
               </CardPrimaryAction>
