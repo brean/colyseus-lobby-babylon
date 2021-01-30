@@ -1,5 +1,6 @@
+import { MapSchema } from "@colyseus/schema";
 import { Room, Client } from "colyseus";
-import { World, Body, Box, Sphere, Vec3, Cylinder } from 'cannon-es';
+import { World, Body, Box, Shape, Sphere, Vec3, Cylinder } from 'cannon-es';
 import { GAME_MODES, GAME_MAPS } from '../Settings';
 import Player from "../entities/Player";
 import StateHandler from "../entities/StateHandler";
@@ -18,12 +19,13 @@ export default class GameRoom extends Room {
   private maxSpeed: number = 25
   private minSpeed: number = -25
   private canJump: boolean = true
-  private canJumpOff: Array<Room> = []
+  private canJumpOff: Body[] = []
 
   private world: World = new World();
   private bodies: Map<string, Body> = new Map<string, Body>();
   private bodyRadius: number = 0.4;
-  private spawnAreas: Array<any>;
+  private spawnAreas: any[];
+  private areas: Map<Body, any> = new Map<Body, any>()
 
   // When the room is initialized
   onCreate (options: any) {
@@ -119,8 +121,8 @@ export default class GameRoom extends Room {
       } else if (area.type === 'spawn') {
         this.spawnAreas.push(area);
       }
-
-      this.addGroundPlate(area.pos, mapData.height, area.size)
+      const shape = this.addGroundPlate(area.pos, mapData.height, area.size)
+      this.areas.set(shape, area);
     }
 
     for (const obj of mapData.objects) {
@@ -131,7 +133,7 @@ export default class GameRoom extends Room {
     }
   }
 
-  private addGroundPlate(pos: number[], height, size) {
+  private addGroundPlate(pos: number[], height, size): Body {
     const groundBody = new Body({
       mass: 0 // mass === 0 makes the body static
     });
@@ -142,6 +144,7 @@ export default class GameRoom extends Room {
     groundBody.position.z = pos[2];
     groundBody.addShape(groundShape);
     this.world.addBody(groundBody);
+    return groundBody
   }
 
   private applyPositionRotation(body, pos, rot) {
@@ -264,6 +267,7 @@ export default class GameRoom extends Room {
       player.x = playerBody.position.x
       player.y = playerBody.position.y
       player.z = playerBody.position.z
+      
       player.rotation = rotation;
     });
   }
@@ -284,10 +288,20 @@ export default class GameRoom extends Room {
        shape: new Sphere(radius)
     });
     playerBody.addEventListener('collide', (evt) => {
-      const body = evt.body;
-      if (evt.type === 'collide' && (
-        body.mass === 0 || this.canJumpOff.indexOf(body) >= 0)) {
-        this.canJump = true;
+      const body: Body = evt.body;
+      if (evt.type === 'collide') {
+        if (body.mass === 0 || this.canJumpOff.indexOf(body) >= 0) {
+          this.canJump = true;
+        }
+        const area = this.areas.get(body);
+        if (!area) {
+          return;
+        }
+        console.log(area.type)
+        playerData.ready = area.type === 'start';
+        if (playerData.ready) {
+          this.checkAllPlayerReady()
+        }
       }
     })
     this.resetPlayerPhysics(playerBody, playerData)
@@ -297,6 +311,25 @@ export default class GameRoom extends Room {
     // Note that all player in the game will be given the sessionId of each other.
     this.firstUser = false;
     this.state.players[playerData.id] = playerData
+  }
+
+  checkAllPlayerReady() {
+    const players: MapSchema<Player> = this.state.players
+    let allReady = true;
+    let numPlayer = 0;
+    players.forEach((player) => {
+      numPlayer++
+      if (!player.ready) {
+        allReady = false;
+      }
+    })
+    console.log(numPlayer)
+    if (numPlayer < 2) {
+      allReady = false;
+    }
+    if (allReady) {
+      console.log('START!')
+    }
   }
 
   // When a client leaves the room

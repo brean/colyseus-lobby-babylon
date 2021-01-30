@@ -6,6 +6,7 @@ export default class Player extends Schema {
   @type("string") color: string = '#ff0000';
   @type("string") character: string = 'dog';
   @type("boolean") admin: boolean = false;
+  @type("boolean") ready: boolean = false;
   // Pose
   @type("number") x: number = 0.0;
   @type("number") y: number = 0.0;

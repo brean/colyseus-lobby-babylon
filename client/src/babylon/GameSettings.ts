@@ -4,7 +4,7 @@ import { Controller } from './InputControls'
 class GameSettings {
   globalVolume: number = 0.5;
   wilhelmVolume: number = 0.5;
-  private _controller: Array<Controller> = [];
+  private _controller: Controller[] = [];
   controllerAdded: Observable<Controller> = new Observable<Controller>();
   controllerRemoved: Observable<Controller> = new Observable<Controller>();
   controllerChanged: Observable<Controller> = new Observable<Controller>();

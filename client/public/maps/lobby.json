@@ -42,28 +42,28 @@
             "size": 6,
             "name": "neutral",
             "color": "#66aa66",
-            "type": "start_game"
+            "type": "start"
         },
         {
             "pos": [12, 0, -6],
             "size": 6,
             "name": "neutral",
             "color": "#66aa66",
-            "type": "start_game"
+            "type": "start"
         },
         {
             "pos": [6, 0, 0],
             "size": 6,
             "name": "neutral",
             "color": "#66aa66",
-            "type": "start_game"
+            "type": "start"
         },
         {
             "pos": [12, 0, 0],
             "size": 6,
             "name": "neutral",
             "color": "#66aa66",
-            "type": "start_game"
+            "type": "start"
         }
     ],
     "obstacles": [

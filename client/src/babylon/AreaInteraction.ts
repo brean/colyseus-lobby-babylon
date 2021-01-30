@@ -43,7 +43,6 @@ export default class AreaInteraction {
     this.scene = scene;
     inputControls.onButtonPressObservable.add((btn) => {
       for (const area of this.activeAreas) {
-        console.log(area.type)
         if (area.type === 'change_character') {
           this.room.send('change_character', 
             btn === 'a' ? this.characters[0] : this.characters[1])
@@ -120,13 +119,13 @@ export default class AreaInteraction {
     }
   }
 
-  updateCharacterAreaInputs(areaMesh: BABYLON.Mesh, meshes: Array<BABYLON.AbstractMesh>) {
+  updateCharacterAreaInputs(areaMesh: BABYLON.Mesh, meshes: BABYLON.AbstractMesh[]) {
     for (const plane of this.characterInputPlanes) {
       plane.dispose()
     }
     this.characterInputPlanes = []
     let controllerNr = 0;
-    let used: Array<string> = []
+    let used: string[] = []
     for (const controller of this.gameSettings.controller) {
       if (controller.active) {
         let left = 'q'
@@ -160,7 +159,7 @@ export default class AreaInteraction {
     if (!this.player || !this.player.bodyMesh) {
       return;
     }
-    let meshes: Array<BABYLON.AbstractMesh> = []
+    let meshes: BABYLON.AbstractMesh[] = []
 
     this.updateCharacterArea(areaMesh, meshes)
     // character change

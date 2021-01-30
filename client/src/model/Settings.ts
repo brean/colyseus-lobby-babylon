@@ -1,4 +1,4 @@
-const GAME_MODES: Array<string> = ['classic', 'arcade'];
-const GAME_MAPS: Array<string> = ['field', 'carnage'];
+const GAME_MODES: string[] = ['classic', 'arcade'];
+const GAME_MAPS: string[] = ['field', 'carnage'];
 
 export { GAME_MODES, GAME_MAPS };
