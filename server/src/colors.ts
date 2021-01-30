@@ -34,6 +34,10 @@ function hexToHsl(color) {
 // use HSL to always garantee a bright color
 // based on https://stackoverflow.com/questions/36721830/convert-hsl-to-rgb-and-hex
 function hslToHex(hue: number, saturation: number, lightness:number) {
+  hue = hue % 360;
+  if (hue < 0) {
+    hue += 360
+  }
   lightness /= 100;
   const a = saturation * Math.min(lightness, 1 - lightness) / 100;
   const f = n => {

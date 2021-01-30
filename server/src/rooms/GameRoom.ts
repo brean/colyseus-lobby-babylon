@@ -41,12 +41,6 @@ export default class GameRoom extends Room {
       let color = p.color;
       const hsl = hexToHsl(color)
       let hue = hsl[0] + hueDifference
-      if (hue > 360) {
-        hue -= 360
-      }
-      if (hue < 0) {
-        hue += 360
-      }
       color = hslToHex(hue, hsl[1], hsl[2])
       console.log('set color to ' + color)
       p.color = color;
