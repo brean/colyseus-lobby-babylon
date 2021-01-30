@@ -11,12 +11,19 @@ A babylon.js/WebGL frontent for rendering a lobby using colyseus.io for multipla
 - Suport for mobile (touchscreen), Mouse&Keyboard as well as gamepads.
   - allowing local splitscreen by running multiple browser windows and (de)activating controller.
 - Individual controller configuration and configuration of different sounds.
+
 ![config dialog](docs/controller_and_sound.png)
+
 - Color selection
+
 ![](docs/color_select.png)
+
 - Character selection
+
 ![](docs/character_select.png)
+
 - A big start button to start your game
+
 ![](docs/start.png)
 
 (Note that this is only the lobby, it does NOT implement a full game, take a look at my Global Game Jam 2021 game [Puppy Search Brawl](https://github.com/brean/puppy-search-brawl) )
